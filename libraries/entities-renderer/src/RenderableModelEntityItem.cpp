@@ -33,6 +33,7 @@
 #include "EntityTreeRenderer.h"
 #include "EntitiesRendererLogging.h"
 
+#pragma optimize("", off)//pptt
 
 void ModelEntityWrapper::setModel(const ModelPointer& model) {
     withWriteLock([&] {
@@ -144,6 +145,8 @@ bool RenderableModelEntityItem::needsUpdateModelBounds() const {
     if (model->getScaleToFitDimensions() != getScaledDimensions()) {
         return true;
     }
+
+    // PP todo?  check _snapModelToRegistrationPoint?
 
     if (model->getRegistrationPoint() != getRegistrationPoint()) {
         return true;
@@ -1316,9 +1319,19 @@ void ModelEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& sce
         return;
     }
 
+    static bool pptest_overridexform=false;
+    static int pptest_version = 2;
+        
+
     // Check for addition
     if (_hasModel && !model) {
         model = std::make_shared<Model>(nullptr, entity.get(), _created);
+
+        if (pptest_overridexform && (pptest_version == 2))
+        {
+            model->setOffset(glm::vec3(0,0,0));
+        }
+
         connect(model.get(), &Model::requestRenderUpdate, this, &ModelEntityRenderer::requestRenderUpdate);
         connect(model.get(), &Model::setURLFinished, this, [&](bool didVisualGeometryRequestSucceed) {
             setKey(didVisualGeometryRequestSucceed);
@@ -1391,6 +1404,7 @@ void ModelEntityRenderer::doRenderUpdateSynchronousTyped(const ScenePointer& sce
     if (entity->_needsJointSimulation) {
         entity->copyAnimationJointDataToModel();
     }
+
     entity->updateModelBounds();
     entity->stopModelOverrideIfNoParent();
 

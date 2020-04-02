@@ -174,7 +174,6 @@ public:
     void reset();
 
     void setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, const glm::vec3& registrationPoint);
-    bool getSnapModelToRegistrationPoint() { return _snapModelToRegistrationPoint; }
 
     virtual void simulate(float deltaTime, bool fullUpdate = true);
     virtual void updateClusterMatrices();
@@ -221,9 +220,6 @@ public:
     void setSnapModelToCenter(bool snapModelToCenter) {
         setSnapModelToRegistrationPoint(snapModelToCenter, glm::vec3(0.5f,0.5f,0.5f));
     };
-    bool getSnapModelToCenter() {
-        return _snapModelToRegistrationPoint && _registrationPoint == glm::vec3(0.5f,0.5f,0.5f);
-    }
 
     /// Returns the number of joint states in the model.
     int getJointStateCount() const { return (int)_rig.getJointStateCount(); }

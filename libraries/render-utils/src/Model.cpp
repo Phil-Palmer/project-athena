@@ -50,6 +50,7 @@ int normalTypeVecTypeId = qRegisterMetaType<QVector<NormalType>>("QVector<Normal
 float Model::FAKE_DIMENSION_PLACEHOLDER = -1.0f;
 #define HTTP_INVALID_COM "http://invalid.com"
 
+static bool pptest_setterRegPointQuandMeme = true;
 Model::Model(QObject* parent, SpatiallyNestable* spatiallyNestableOverride, uint64_t created) :
     QObject(parent),
     _renderGeometry(),
@@ -72,7 +73,15 @@ Model::Model(QObject* parent, SpatiallyNestable* spatiallyNestableOverride, uint
         moveToThread(_viewState->getMainThread());
     }
 
+    //*pprotest
     setSnapModelToRegistrationPoint(true, glm::vec3(0.5f));
+    /*/
+    setOffset(glm::vec3(0,0,0));
+    if(pptest_setterRegPointQuandMeme)
+    {
+        _registrationPoint = glm::vec3(0.5f);
+    }
+    //*/
 
     connect(&_renderWatcher, &GeometryResourceWatcher::finished, this, &Model::loadURLFinished);
 }
@@ -1359,19 +1368,39 @@ void Model::setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, c
 void Model::snapToRegistrationPoint() {
     Extents modelMeshExtents = getUnscaledMeshExtents();
     glm::vec3 dimensions = (modelMeshExtents.maximum - modelMeshExtents.minimum);
-    glm::vec3 offset = -modelMeshExtents.minimum - (dimensions * _registrationPoint);
-    _offset = offset;
-    _snappedToRegistrationPoint = true;
+
+    static bool pptest_skipsnaptoreg = true;
+    if (pptest_skipsnaptoreg)
+    {
+        // ref: if someone manually sets our offset, then we are no longer snapped to center
+        _snapModelToRegistrationPoint = false;
+        _snappedToRegistrationPoint = false;
+    }
+    else
+    {
+        glm::vec3 offset = -modelMeshExtents.minimum - (dimensions * _registrationPoint);
+        _offset = offset;
+        _snappedToRegistrationPoint = true;
+    }
 }
 
 void Model::setUseDualQuaternionSkinning(bool value) {
     _useDualQuaternionSkinning = value;
 }
 
+static bool pptest_forcefullupdate=true;
 void Model::simulate(float deltaTime, bool fullUpdate) {
     DETAILED_PROFILE_RANGE(simulation_detail, __FUNCTION__);
     fullUpdate = updateGeometry() || fullUpdate || (_scaleToFit && !_scaledToFit)
                     || (_snapModelToRegistrationPoint && !_snappedToRegistrationPoint);
+
+    if (pptest_forcefullupdate)
+    {
+        if (!fullUpdate)
+        {
+            fullUpdate=true;
+        }
+    }
 
     if (isActive() && fullUpdate) {
         onInvalidate();
