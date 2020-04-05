@@ -1793,24 +1793,9 @@ float EntityItem::getVolumeEstimate() const {
 }
 
 void EntityItem::setRegistrationPoint(const glm::vec3& value) {
-
-    static bool pptest_noclamp = true;
-
      if (value != _registrationPoint) {
         withWriteLock([&] {
-
-            if (pptest_noclamp)
-            {
                 _registrationPoint = value;
-            }
-            else
-            {
-            /*pprotest
-                _registrationPoint = glm::clamp(value, glm::vec3(ENTITY_ITEM_MIN_REGISTRATION_POINT), 
-                                                       glm::vec3(ENTITY_ITEM_MAX_REGISTRATION_POINT));
-                                                       */
-                assert(0);
-            }
         });
         dimensionsChanged(); // Registration Point affects the bounding box
         markDirtyFlags(Simulation::DIRTY_SHAPE);

@@ -96,7 +96,7 @@ const AnimPoseVec& AnimBlendDirectional::evaluate(const AnimVariantMap& animVars
             }
         }
         _poses.resize(minSize);
-        if (minSize > 0)
+        if (minSize > 0)// fix pour assert OOB
         {
             blend4(minSize, &poseVecs[0][0], &poseVecs[1][0], &poseVecs[2][0], &poseVecs[3][0], &alphas[0], &_poses[0]);
         }

@@ -2473,8 +2473,6 @@ var PropertiesTool = function (opts) {
                     selectionManager.saveProperties();
                     for (i = 0; i < selectionManager.selections.length; i++) {
                         properties = selectionManager.savedProperties[selectionManager.selections[i]];
-
-                        /*
                         var naturalDimensions = properties.naturalDimensions;
 
                         // If any of the natural dimensions are not 0, resize
@@ -2487,10 +2485,26 @@ var PropertiesTool = function (opts) {
                                 dimensions: properties.naturalDimensions
                             });
                         }
-                        /*/
+                    }
+                    pushCommandForSelections();
+                    selectionManager._update(false, this);
+                }
+            } else if (data.action === "useOriginalMeshPivot") {
+                if (selectionManager.hasSelection()) {
+                    selectionManager.saveProperties();
+                    for (i = 0; i < selectionManager.selections.length; i++) {
+                        properties = selectionManager.savedProperties[selectionManager.selections[i]];
+
+                        var naturalDimensions = properties.naturalDimensions;
+
+                        // If any of the natural dimensions are not 0, set the entity's pivot to match the mesh's pivot.
+                        if (properties.type === "Model" && naturalDimensions.x === 0 && naturalDimensions.y === 0 &&
+                            naturalDimensions.z === 0) {
+                            Window.notifyEditError("Cannot apply the original mesh pivot to the entity: Model URL" +
+                                " is invalid or the model has not yet been loaded.");
+                        } else {
 
                         var naturalPosition = properties.naturalPosition;
-                        var naturalDimensions = properties.naturalDimensions;
 
                         var naturalMinimumExtent = Vec3.subtract(naturalPosition, Vec3.multiply(naturalDimensions, 0.5));
                         var negativeNaturalMinimumExtent = Vec3.multiply(naturalMinimumExtent, -1);
@@ -2503,7 +2517,7 @@ var PropertiesTool = function (opts) {
                             registrationPoint: autoRegPoint
                         });
 
-                        //*/
+                        }
                     }
                     pushCommandForSelections();
                     selectionManager._update(false, this);

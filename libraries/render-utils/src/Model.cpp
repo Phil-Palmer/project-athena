@@ -50,7 +50,6 @@ int normalTypeVecTypeId = qRegisterMetaType<QVector<NormalType>>("QVector<Normal
 float Model::FAKE_DIMENSION_PLACEHOLDER = -1.0f;
 #define HTTP_INVALID_COM "http://invalid.com"
 
-static bool pptest_setterRegPointQuandMeme = true;
 Model::Model(QObject* parent, SpatiallyNestable* spatiallyNestableOverride, uint64_t created) :
     QObject(parent),
     _renderGeometry(),
@@ -73,15 +72,7 @@ Model::Model(QObject* parent, SpatiallyNestable* spatiallyNestableOverride, uint
         moveToThread(_viewState->getMainThread());
     }
 
-    //*pprotest
     setSnapModelToRegistrationPoint(true, glm::vec3(0.5f));
-    /*/
-    setOffset(glm::vec3(0,0,0));
-    if(pptest_setterRegPointQuandMeme)
-    {
-        _registrationPoint = glm::vec3(0.5f);
-    }
-    //*/
 
     connect(&_renderWatcher, &GeometryResourceWatcher::finished, this, &Model::loadURLFinished);
 }
@@ -1356,92 +1347,30 @@ void Model::scaleToFit() {
     _scaledToFit = true;
 }
 
-void Model::setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, const glm::vec3& registrationPoint)
-{
-    static bool ppptest_noclamp = true;
-
-    static bool pptest_autoregpoint = false;
-    if (pptest_autoregpoint)
-    {
-        const Extents modelMeshExtents = getUnscaledMeshExtents();
-        const glm::vec3 dimensions = (modelMeshExtents.maximum - modelMeshExtents.minimum);
-
-        // not clamped
-        const glm::vec3 clampedRegistrationPoint = -modelMeshExtents.minimum / dimensions;
-
-        
-        if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != clampedRegistrationPoint) {
-            _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
-            _registrationPoint = clampedRegistrationPoint;
-            _snappedToRegistrationPoint = false; // force re-centering
-        }
-    }
-    else
-    {
-        glm::vec3 clampedRegistrationPoint = glm::clamp(registrationPoint, 0.0f, 1.0f);
-
-        if (ppptest_noclamp)
-        {
-            if (clampedRegistrationPoint != registrationPoint)
-            {
-                int s=0;
-                s++;
-                s=0;
-            }
-
-             if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != registrationPoint) {
-                _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
-                _registrationPoint = registrationPoint;
-                _snappedToRegistrationPoint = false; // force re-centering
-            }
-        }
-        else
-        {    
-            if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != clampedRegistrationPoint) {
-                _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
-                _registrationPoint = clampedRegistrationPoint;
-                _snappedToRegistrationPoint = false; // force re-centering
-            }
-        }
+void Model::setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, const glm::vec3& registrationPoint) {
+    if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != registrationPoint) {
+        _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
+        _registrationPoint = registrationPoint;
+        _snappedToRegistrationPoint = false; // force re-centering
     }
 }
 
 void Model::snapToRegistrationPoint() {
     Extents modelMeshExtents = getUnscaledMeshExtents();
     glm::vec3 dimensions = (modelMeshExtents.maximum - modelMeshExtents.minimum);
-
-    static bool pptest_skipsnaptoreg = false;
-    if (pptest_skipsnaptoreg)
-    {
-        // ref: if someone manually sets our offset, then we are no longer snapped to center
-        _snapModelToRegistrationPoint = false;
-        _snappedToRegistrationPoint = false;
-    }
-    else
-    {
-        glm::vec3 offset = -modelMeshExtents.minimum - (dimensions * _registrationPoint);
-        _offset = offset;
-        _snappedToRegistrationPoint = true;
-    }
+    glm::vec3 offset = -modelMeshExtents.minimum - (dimensions * _registrationPoint);
+    _offset = offset;
+    _snappedToRegistrationPoint = true;
 }
 
 void Model::setUseDualQuaternionSkinning(bool value) {
     _useDualQuaternionSkinning = value;
 }
 
-static bool pptest_forcefullupdate=true;
 void Model::simulate(float deltaTime, bool fullUpdate) {
     DETAILED_PROFILE_RANGE(simulation_detail, __FUNCTION__);
     fullUpdate = updateGeometry() || fullUpdate || (_scaleToFit && !_scaledToFit)
                     || (_snapModelToRegistrationPoint && !_snappedToRegistrationPoint);
-
-    if (pptest_forcefullupdate)
-    {
-        if (!fullUpdate)
-        {
-            fullUpdate=true;
-        }
-    }
 
     if (isActive() && fullUpdate) {
         onInvalidate();
