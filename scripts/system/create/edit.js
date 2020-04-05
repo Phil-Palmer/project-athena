@@ -2518,6 +2518,8 @@ var PropertiesTool = function (opts) {
                     selectionManager.saveProperties();
                     for (i = 0; i < selectionManager.selections.length; i++) {
                         properties = selectionManager.savedProperties[selectionManager.selections[i]];
+
+                        /*
                         var naturalDimensions = properties.naturalDimensions;
 
                         // If any of the natural dimensions are not 0, resize
@@ -2530,6 +2532,23 @@ var PropertiesTool = function (opts) {
                                 dimensions: properties.naturalDimensions
                             });
                         }
+                        /*/
+
+                        var naturalPosition = properties.naturalPosition;
+                        var naturalDimensions = properties.naturalDimensions;
+
+                        var naturalMinimumExtent = Vec3.subtract(naturalPosition, Vec3.multiply(naturalDimensions, 0.5));
+                        var negativeNaturalMinimumExtent = Vec3.multiply(naturalMinimumExtent, -1);
+
+                        var invDimensions = { x: 1 / naturalDimensions.x, y: 1 / naturalDimensions.y, z: 1 / naturalDimensions.z };
+
+                        var autoRegPoint = Vec3.multiplyVbyV(negativeNaturalMinimumExtent, invDimensions);
+
+                        Entities.editEntity(selectionManager.selections[i], {
+                            registrationPoint: autoRegPoint
+                        });
+
+                        //*/
                     }
                     pushCommandForSelections();
                     selectionManager._update(false, this);

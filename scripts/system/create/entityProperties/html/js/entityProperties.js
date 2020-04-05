@@ -1392,7 +1392,7 @@ const GROUPS = [
                 defaultValue: 100,
                 unit: "%",
                 buttons: [ { id: "rescale", label: "Rescale", className: "blue", onClick: rescaleDimensions }, 
-                           { id: "reset", label: "Reset Dimensions", className: "red", onClick: resetToNaturalDimensions } ],
+                           { id: "reset", label: "AutoRegPoint"/*"Reset Dimensions"*/, className: "red", onClick: resetToNaturalDimensions } ],
                 propertyID: "scale",
             },
             {

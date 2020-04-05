@@ -23,7 +23,7 @@
 #include "EntitiesLogging.h"
 #include "EntityItem.h"
 #include "EntityItemProperties.h"
-
+#define WANT_DEBUG//PPTTEST
 EntityEditPacketSender::EntityEditPacketSender() {
     auto& packetReceiver = DependencyManager::get<NodeList>()->getPacketReceiver();
     packetReceiver.registerDirectListener(PacketType::EntityEditNack, this, "processEntityEditNackPacket");
