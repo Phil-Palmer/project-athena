@@ -20,9 +20,13 @@ macro(SET_PACKAGING_PARAMETERS)
   set(BUILD_NUMBER 0)
   set(APP_USER_MODEL_ID "com.highfidelity.console-dev")
 
-  set_from_env(RELEASE_TYPE RELEASE_TYPE "DEV")
-  set_from_env(RELEASE_NUMBER RELEASE_NUMBER "")
-  set_from_env(STABLE_BUILD STABLE_BUILD 0)
+  #set_from_env(RELEASE_TYPE RELEASE_TYPE "DEV")
+  #set_from_env(RELEASE_NUMBER RELEASE_NUMBER "")
+  #set_from_env(STABLE_BUILD STABLE_BUILD 0)
+  set (RELEASE_TYPE "PRODUCTION")#set_from_env(RELEASE_TYPE RELEASE_TYPE "PRODUCTION")#PP WAS:"DEV")
+  set (RELEASE_BUILD "PRODUCTION")  #set_from_env(RELEASE_BUILD RELEASE_BUILD "PRODUCTION")#PP ADDED
+  set (RELEASE_NUMBER "")  #set_from_env(RELEASE_NUMBER RELEASE_NUMBER "Pidditsoft Edition")
+  set (STABLE_BUILD 1)#pp?
 
   message(STATUS "The RELEASE_TYPE variable is: ${RELEASE_TYPE}")
 

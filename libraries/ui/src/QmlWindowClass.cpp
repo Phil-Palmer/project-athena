@@ -229,7 +229,17 @@ void QmlWindowClass::setVisible(bool visible) {
     }
 
     QQuickItem* targetWindow = asQuickItem();
-    targetWindow->setProperty(OFFSCREEN_VISIBILITY_PROPERTY, visible);
+
+    if (targetWindow == nullptr)// <-- PP FIX POUR UN CRASH EN FERMANT LES FEN{ETRES DE EDITMODE
+    {
+        int s=0;
+        s++;
+        s=0;
+    }
+    else
+    {
+        targetWindow->setProperty(OFFSCREEN_VISIBILITY_PROPERTY, visible);
+    }
 }
 
 bool QmlWindowClass::isVisible() {

@@ -1356,12 +1356,53 @@ void Model::scaleToFit() {
     _scaledToFit = true;
 }
 
-void Model::setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, const glm::vec3& registrationPoint) {
-    glm::vec3 clampedRegistrationPoint = glm::clamp(registrationPoint, 0.0f, 1.0f);
-    if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != clampedRegistrationPoint) {
-        _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
-        _registrationPoint = clampedRegistrationPoint;
-        _snappedToRegistrationPoint = false; // force re-centering
+void Model::setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, const glm::vec3& registrationPoint)
+{
+    static bool ppptest_noclamp = true;
+
+    static bool pptest_autoregpoint = false;
+    if (pptest_autoregpoint)
+    {
+        const Extents modelMeshExtents = getUnscaledMeshExtents();
+        const glm::vec3 dimensions = (modelMeshExtents.maximum - modelMeshExtents.minimum);
+
+        // not clamped
+        const glm::vec3 clampedRegistrationPoint = -modelMeshExtents.minimum / dimensions;
+
+        
+        if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != clampedRegistrationPoint) {
+            _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
+            _registrationPoint = clampedRegistrationPoint;
+            _snappedToRegistrationPoint = false; // force re-centering
+        }
+    }
+    else
+    {
+        glm::vec3 clampedRegistrationPoint = glm::clamp(registrationPoint, 0.0f, 1.0f);
+
+        if (ppptest_noclamp)
+        {
+            if (clampedRegistrationPoint != registrationPoint)
+            {
+                int s=0;
+                s++;
+                s=0;
+            }
+
+             if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != registrationPoint) {
+                _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
+                _registrationPoint = registrationPoint;
+                _snappedToRegistrationPoint = false; // force re-centering
+            }
+        }
+        else
+        {    
+            if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != clampedRegistrationPoint) {
+                _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
+                _registrationPoint = clampedRegistrationPoint;
+                _snappedToRegistrationPoint = false; // force re-centering
+            }
+        }
     }
 }
 
@@ -1369,7 +1410,7 @@ void Model::snapToRegistrationPoint() {
     Extents modelMeshExtents = getUnscaledMeshExtents();
     glm::vec3 dimensions = (modelMeshExtents.maximum - modelMeshExtents.minimum);
 
-    static bool pptest_skipsnaptoreg = true;
+    static bool pptest_skipsnaptoreg = false;
     if (pptest_skipsnaptoreg)
     {
         // ref: if someone manually sets our offset, then we are no longer snapped to center
