@@ -1392,7 +1392,7 @@ const GROUPS = [
                 defaultValue: 100,
                 unit: "%",
                 buttons: [ { id: "rescale", label: "Rescale", className: "blue", onClick: rescaleDimensions }, 
-                           { id: "reset", label: "AutoRegPoint"/*"Reset Dimensions"*/, className: "red", onClick: resetToNaturalDimensions } ],
+                           { id: "reset", label: "Reset Dimensions", className: "red", onClick: resetToNaturalDimensions } ],
                 propertyID: "scale",
             },
             {
@@ -1403,6 +1403,7 @@ const GROUPS = [
                 decimals: 4,
                 subLabels: [ "x", "y", "z" ],
                 unit: "(ratio of dimension)",
+                buttons: [ { id: "originalMeshPivot", label: "Use Mesh Pivot", className: "red", onClick: useOriginalMeshPivot } ],
                 propertyID: "registrationPoint",
             },
             {

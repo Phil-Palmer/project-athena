@@ -390,41 +390,13 @@ bool OctreePacketData::appendValue(const glm::vec2& value) {
 }
 
 bool OctreePacketData::appendValue(const glm::vec3& value) {
-
-    static bool pptest_forceZ = false;
-
-    bool success = false;
-
-    if (pptest_forceZ)
-    {
-        pptest_forceZ = false;
-
-        const unsigned char* dataOrig = (const unsigned char*)&value;
-
-        unsigned char data[12];
-        memcpy(data, dataOrig, 12);
-
-        float plantVal = 0.888f;
-        memcpy(&data[8], (const unsigned char*)&plantVal, 4);
-
-        int length = sizeof(glm::vec3);
-        success = append(data, length);
-        if (success) {
-            _bytesOfValues += length;
-            _totalBytesOfValues += length;
-        }
+    const unsigned char* data = (const unsigned char*)&value;
+    int length = sizeof(glm::vec3);
+    bool success = append(data, length);
+    if (success) {
+        _bytesOfValues += length;
+        _totalBytesOfValues += length;
     }
-    else
-    {
-        const unsigned char* data = (const unsigned char*)&value;
-        int length = sizeof(glm::vec3);
-        success = append(data, length);
-        if (success) {
-            _bytesOfValues += length;
-            _totalBytesOfValues += length;
-        }
-    }
-
     return success;
 }
 
