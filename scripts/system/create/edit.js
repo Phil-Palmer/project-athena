@@ -2534,7 +2534,7 @@ var PropertiesTool = function (opts) {
                     pushCommandForSelections();
                     selectionManager._update(false, this);
                 }
-            } else if (data.action === "useOriginalMeshPivot") {
+            } else if (data.action === "resetToNaturalPivot") {
                 if (selectionManager.hasSelection()) {
                     selectionManager.saveProperties();
                     for (i = 0; i < selectionManager.selections.length; i++) {
@@ -2542,10 +2542,10 @@ var PropertiesTool = function (opts) {
 
                         var naturalDimensions = properties.naturalDimensions;
 
-                        // If any of the natural dimensions are not 0, set the entity's pivot to match the mesh's pivot.
+                        // If any of the natural dimensions are not 0, set the entity's pivot to match the model's pivot.
                         if (properties.type === "Model" && naturalDimensions.x === 0 && naturalDimensions.y === 0 &&
                             naturalDimensions.z === 0) {
-                            Window.notifyEditError("Cannot apply the original mesh pivot to the entity: Model URL" +
+                            Window.notifyEditError("Cannot apply the model's pivot to the entity: Model URL" +
                                 " is invalid or the model has not yet been loaded.");
                         } else {
 
