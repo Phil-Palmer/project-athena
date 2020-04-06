@@ -1291,8 +1291,14 @@ const GROUPS = [
                 decimals: 4,
                 subLabels: [ "x", "y", "z" ],
                 unit: "(ratio of dimension)",
-                buttons: [ { id: "originalMeshPivot", label: "Use Mesh Pivot", className: "red", onClick: useOriginalMeshPivot } ],
                 propertyID: "registrationPoint",
+            },
+            {
+                //pp todo something like that? (didn't work)      style: {display: "none"},
+                label: "",
+                type: "buttons",
+                buttons: [ { id: "resetPivot", label: "Use Model's Pivot", className: "blue", onClick: resetToNaturalPivot } ],
+                propertyID: "modelSpecificPivotButtons",
             },
             {
                 label: "Align",
@@ -3020,6 +3026,13 @@ function resetToNaturalDimensions() {
     }));
 }
 
+function resetToNaturalPivot() {
+    EventBridge.emitWebEvent(JSON.stringify({
+        type: "action",
+        action: "resetToNaturalPivot"
+    }));
+}
+
 function reloadScripts() {
     EventBridge.emitWebEvent(JSON.stringify({
         type: "action",
@@ -3693,6 +3706,10 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
 
         const certificateIDMultiValue = getMultiplePropertyValue('certificateID');
         const hasCertifiedInSelection = certificateIDMultiValue.isMultiDiffValue || certificateIDMultiValue.value !== "";
+
+        // pp todo comment
+        const selectionIsOnlyModels = ((entityTypes.length == 1) && (entityTypes[0] == "Model"));
+        showPropertyElement("modelSpecificPivotButtons", selectionIsOnlyModels);
 
         Object.entries(properties).forEach(function([propertyID, property]) {
             const propertyData = property.data;
@@ -4427,6 +4444,7 @@ function loaded() {
         bindAllNonJSONEditorElements(); 
 
         showGroupsForType("None");
+        showPropertyElement("modelSpecificPivotButtons", false);// pp todo: a way of setting initially invisible in the property definition instead?
         resetProperties();
         disableProperties();        
     });
