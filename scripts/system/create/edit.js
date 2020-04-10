@@ -2494,29 +2494,25 @@ var PropertiesTool = function (opts) {
                     selectionManager.saveProperties();
                     for (i = 0; i < selectionManager.selections.length; i++) {
                         properties = selectionManager.savedProperties[selectionManager.selections[i]];
-
                         var naturalDimensions = properties.naturalDimensions;
 
-                        // If any of the natural dimensions are not 0, set the entity's pivot to match the model's pivot.
+                        // If any of the natural dimensions are not 0, set the entity's pivot according to its natural dimensions and natural position.
+                        // In this way, a model entity will match the pivot of its model.
                         if (properties.type === "Model" && naturalDimensions.x === 0 && naturalDimensions.y === 0 &&
                             naturalDimensions.z === 0) {
                             Window.notifyEditError("Cannot apply the model's pivot to the entity: Model URL" +
                                 " is invalid or the model has not yet been loaded.");
                         } else {
+                            var naturalMinimumExtent = Vec3.subtract(properties.naturalPosition, Vec3.multiply(naturalDimensions, 0.5));
+                            var negativeNaturalMinimumExtent = Vec3.multiply(naturalMinimumExtent, -1);
 
-                        var naturalPosition = properties.naturalPosition;
+                            var invNaturalDimensions = { x: 1.0 / naturalDimensions.x, y: 1.0 / naturalDimensions.y, z: 1.0 / naturalDimensions.z };
 
-                        var naturalMinimumExtent = Vec3.subtract(naturalPosition, Vec3.multiply(naturalDimensions, 0.5));
-                        var negativeNaturalMinimumExtent = Vec3.multiply(naturalMinimumExtent, -1);
+                            var naturalPivot = Vec3.multiplyVbyV(negativeNaturalMinimumExtent, invNaturalDimensions);
 
-                        var invDimensions = { x: 1 / naturalDimensions.x, y: 1 / naturalDimensions.y, z: 1 / naturalDimensions.z };
-
-                        var autoRegPoint = Vec3.multiplyVbyV(negativeNaturalMinimumExtent, invDimensions);
-
-                        Entities.editEntity(selectionManager.selections[i], {
-                            registrationPoint: autoRegPoint
-                        });
-
+                            Entities.editEntity(selectionManager.selections[i], {
+                                registrationPoint: naturalPivot
+                            });
                         }
                     }
                     pushCommandForSelections();

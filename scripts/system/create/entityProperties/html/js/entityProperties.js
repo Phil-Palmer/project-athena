@@ -1294,10 +1294,10 @@ const GROUPS = [
                 propertyID: "registrationPoint",
             },
             {
-                //pp todo something like that? (didn't work)      style: {display: "none"},
+                // Displayed only for model entities.
                 label: "",
                 type: "buttons",
-                buttons: [ { id: "resetPivot", label: "Use Model's Pivot", className: "blue", onClick: resetToNaturalPivot } ],
+                buttons: [ { id: "useModelsPivot", label: "Use Model's Pivot", className: "blue", onClick: resetToNaturalPivot } ],
                 propertyID: "modelSpecificPivotButtons",
             },
             {
@@ -3707,7 +3707,7 @@ function handleEntitySelectionUpdate(selections, isPropertiesToolUpdate) {
         const certificateIDMultiValue = getMultiplePropertyValue('certificateID');
         const hasCertifiedInSelection = certificateIDMultiValue.isMultiDiffValue || certificateIDMultiValue.value !== "";
 
-        // pp todo comment
+        // Show model-specific buttons if only models are selected.
         const selectionIsOnlyModels = ((entityTypes.length == 1) && (entityTypes[0] == "Model"));
         showPropertyElement("modelSpecificPivotButtons", selectionIsOnlyModels);
 
@@ -4444,7 +4444,7 @@ function loaded() {
         bindAllNonJSONEditorElements(); 
 
         showGroupsForType("None");
-        showPropertyElement("modelSpecificPivotButtons", false);// pp todo: a way of setting initially invisible in the property definition instead?
+        showPropertyElement("modelSpecificPivotButtons", false);// Hidden until a model entitiy is selected.
         resetProperties();
         disableProperties();        
     });

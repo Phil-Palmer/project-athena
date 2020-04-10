@@ -1795,7 +1795,7 @@ float EntityItem::getVolumeEstimate() const {
 void EntityItem::setRegistrationPoint(const glm::vec3& value) {
      if (value != _registrationPoint) {
         withWriteLock([&] {
-                _registrationPoint = value;
+            _registrationPoint = value;
         });
         dimensionsChanged(); // Registration Point affects the bounding box
         markDirtyFlags(Simulation::DIRTY_SHAPE);
