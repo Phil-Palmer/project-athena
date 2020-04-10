@@ -174,6 +174,7 @@ public:
     void reset();
 
     void setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, const glm::vec3& registrationPoint);
+    bool getSnapModelToRegistrationPoint() { return _snapModelToRegistrationPoint; }
 
     virtual void simulate(float deltaTime, bool fullUpdate = true);
     virtual void updateClusterMatrices();
