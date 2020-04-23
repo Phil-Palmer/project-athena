@@ -16,7 +16,9 @@
 #include "InterfaceLogging.h"
 #include "AnimUtil.h"
 
+#pragma optimize("", off)// PP
 
+static bool pptest_noflypose = true;
 
 MySkeletonModel::MySkeletonModel(Avatar* owningAvatar, QObject* parent) : SkeletonModel(owningAvatar, parent) {
 }
@@ -207,7 +209,8 @@ void MySkeletonModel::updateRig(float deltaTime, glm::mat4 parentTransform) {
         }
     }
 
-    bool isFlying = (myAvatar->getCharacterController()->getState() == CharacterController::State::Hover || myAvatar->getCharacterController()->computeCollisionMask() == BULLET_COLLISION_MASK_COLLISIONLESS);
+    bool isFlying = (myAvatar->getCharacterController()->getState() == CharacterController::State::Hover ||
+        (!pptest_noflypose && myAvatar->getCharacterController()->computeCollisionMask() == BULLET_COLLISION_MASK_COLLISIONLESS) );
     if (isFlying != _prevIsFlying) {
         const float FLY_TO_IDLE_HIPS_TRANSITION_TIME = 0.5f;
         _flyIdleTimer = FLY_TO_IDLE_HIPS_TRANSITION_TIME;
@@ -218,7 +221,6 @@ void MySkeletonModel::updateRig(float deltaTime, glm::mat4 parentTransform) {
 
     // if hips are not under direct control, estimate the hips position.
     if (avatarHeadPose.isValid() && !(params.primaryControllerFlags[Rig::PrimaryControllerType_Hips] & (uint8_t)Rig::ControllerFlags::Enabled)) {
-        bool isFlying = (myAvatar->getCharacterController()->getState() == CharacterController::State::Hover || myAvatar->getCharacterController()->computeCollisionMask() == BULLET_COLLISION_MASK_COLLISIONLESS);
 
         // timescale in seconds
         const float TRANS_HORIZ_TIMESCALE = 0.15f;
