@@ -1756,6 +1756,8 @@ public:
     MyAvatar::SitStandModelType getUserRecenterModel() const;
     void setIsSitStandStateLocked(bool isLocked);
     bool getIsSitStandStateLocked() const;
+    bool getForceAvatarToStandPreference() const;//pp todo comment
+    void setForceAvatarToStandPreference(const bool forceStand);//pp todo comment
     void setWalkSpeed(float value);
     float getWalkSpeed() const;
     void setWalkBackwardSpeed(float value);
@@ -3006,6 +3008,7 @@ private:
     bool _isInWalkingState { false };
     ThreadSafeValueCache<bool> _isInSittingState { false };
     ThreadSafeValueCache<MyAvatar::SitStandModelType> _userRecenterModel { MyAvatar::SitStandModelType::Auto };
+    ThreadSafeValueCache<bool> _forceAvatarToStandPreference { true };
     float _sitStandStateTimer { 0.0f };
     float _squatTimer { 0.0f };
     float _tippingPoint { _userHeight.get() };
