@@ -65,7 +65,7 @@
 #include "MovingEntitiesOperator.h"
 #include "SceneScriptingInterface.h"
 
-#pragma optimize("", off)// PP
+//#pragma optimize("", off)// PP
 
 using namespace std;
 
@@ -112,6 +112,12 @@ const float POINT_ALPHA_BLENDING = 1.0f;
 
 static bool pptest_useRecentre = false;// TODO: myAvatar member, false only when foot-tracking
 static bool pptest_onlycollidewhenpushing = true;// TODO: myAvatar member, false only when foot-tracking
+static bool pptest_param1 = false;
+static bool pptest_param2 = false;
+static bool pptest_param3 = false;
+static bool pptest_param4 = false;
+static bool pptest_param5 = false;
+static bool pptest_param6 = false;
 
 MyAvatar::SitStandModelType stringToUserRecenterModel(const QString& str) {
     if (str == USER_RECENTER_MODEL_FORCE_SIT) {
@@ -270,7 +276,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     // when we leave a domain we lift whatever restrictions that domain may have placed on our scale
     connect(&domainHandler, &DomainHandler::disconnectedFromDomain, this, &MyAvatar::leaveDomain);
 
-    _bodySensorMatrix = deriveBodyFromHMDSensor();
+    _bodySensorMatrix = deriveBodyFromHMDSensor(pptest_param1);
 
     using namespace recording;
 
@@ -496,7 +502,7 @@ void MyAvatar::centerBody() {
     }
 
     // derive the desired body orientation from the current hmd orientation, before the sensor reset.
-    auto newBodySensorMatrix = deriveBodyFromHMDSensor(); // Based on current cached HMD position/rotation..
+    auto newBodySensorMatrix = deriveBodyFromHMDSensor(pptest_param2); // Based on current cached HMD position/rotation..
 
     // transform this body into world space
     auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
@@ -550,7 +556,7 @@ void MyAvatar::reset(bool andRecenter, bool andReload, bool andHead) {
 
     if (andRecenter) {
         // derive the desired body orientation from the *old* hmd orientation, before the sensor reset.
-        auto newBodySensorMatrix = deriveBodyFromHMDSensor(); // Based on current cached HMD position/rotation..
+        auto newBodySensorMatrix = deriveBodyFromHMDSensor(pptest_param3); // Based on current cached HMD position/rotation..
 
         // transform this body into world space
         auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
@@ -566,7 +572,7 @@ void MyAvatar::reset(bool andRecenter, bool andReload, bool andHead) {
         updateFromHMDSensorMatrix(identity);
 
         // update the body in sensor space using the new hmd sensor sample
-        _bodySensorMatrix = deriveBodyFromHMDSensor();
+        _bodySensorMatrix = deriveBodyFromHMDSensor(pptest_param4);
 
         // rebuild the sensor to world matrix such that, the HMD will point in the desired orientation.
         // i.e. the along avatar's current position and orientation.
@@ -2713,7 +2719,7 @@ void MyAvatar::prepareForPhysicsSimulation() {
         if (pptest_useRecentre)
             _follow.prePhysicsUpdate(*this, deriveBodyFromHMDSensor(), _bodySensorMatrix, hasDriveInput());
         else
-            _PPF2follow.prePhysicsUpdate(*this, deriveBodyFromHMDSensor(), _bodySensorMatrix, hasDriveInput());
+            _PPF2follow.prePhysicsUpdate(*this, deriveBodyFromHMDSensor(pptest_param5), _bodySensorMatrix, hasDriveInput());
     } else {
         _follow.deactivate();
         _PPF2follow.deactivate();
@@ -3101,7 +3107,7 @@ void MyAvatar::destroyAnimGraph() {
 }
 
 void MyAvatar::animGraphLoaded() {
-    _bodySensorMatrix = deriveBodyFromHMDSensor(); // Based on current cached HMD position/rotation..
+    _bodySensorMatrix = deriveBodyFromHMDSensor(pptest_param6); // Based on current cached HMD position/rotation..
     updateSensorToWorldMatrix(); // Uses updated position/orientation and _bodySensorMatrix changes
     _isAnimatingScale = true;
     _cauterizationNeedsUpdate = true;
@@ -4762,7 +4768,6 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
 
         // PPTEST
     static bool pptest_donew = true;
-    static bool pptest_userealhipsheight = false;
     static bool pptest_180 = true;
     if (pptest_donew)
     {
@@ -4781,11 +4786,8 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
             glm::vec3 hipsPos = hipsControllerPose.getTranslation();
             bodyPos.x = hipsPos.x;
             bodyPos.z = hipsPos.z;
-            if (pptest_userealhipsheight)
-            {
-                bodyPos.y = hipsPos.y;
-            }
-            else if (pptest_pretendstanding)
+ 
+            if (pptest_pretendstanding)
             {
                 bodyPos.y = pp_forcedBodyPosY;
             }
@@ -5314,6 +5316,18 @@ void MyAvatar::setIsSitStandStateLocked(bool isLocked) {
         // always start the auto transition mode in standing state.
         setIsInSittingState(false);
     }
+}
+
+//pp todo comment
+bool MyAvatar::getForceAvatarToStandPreference() const
+{
+    return _forceAvatarToStandPreference.get();
+}
+
+//pp todo comment
+void MyAvatar::setForceAvatarToStandPreference(const bool forceAvatarToStandPreference)
+{
+    _forceAvatarToStandPreference.set(forceAvatarToStandPreference);
 }
 
 void MyAvatar::setWalkSpeed(float value) {
@@ -5993,10 +6007,7 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
 
 glm::mat4 MyAvatar::PPF2FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix) {
 
-static bool pptest_forcederive = false;// yuck no, delme
 static bool pptest_forceactive = true;
-static bool pptest_nostatechange = true;
-static bool pptest_forcesetbodytrans = false;//no
 static bool pptest_forcesetbodytrans2 = true;// new test
 
     if (pptest_forceactive || isActive()) {
@@ -6016,32 +6027,14 @@ static bool pptest_forcesetbodytrans2 = true;// new test
         glm::mat4 newBodyMat = createMatFromQuatAndPos(sensorAngularDisplacement * glmExtractRotation(currentBodyMatrix),
                                                        sensorLinearDisplacement + extractTranslation(currentBodyMatrix));
         
-        if (pptest_forcesetbodytrans)
-        {
-            setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor()));
-        }
-        else if (pptest_forcesetbodytrans2)
+        if (pptest_forcesetbodytrans2)
         {
             setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(true)));
-        }
-        else if ((!pptest_nostatechange) && myAvatar.getSitStandStateChange()) {
-            myAvatar.setSitStandStateChange(false);
-            setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor()));
-        }
-
-        if (pptest_forcederive)
-        {
-            return myAvatar.deriveBodyFromHMDSensor();
         }
 
         return newBodyMat;
 
     } else {
-
-        if (pptest_forcederive)
-        {
-            return myAvatar.deriveBodyFromHMDSensor();
-        }
 
         return currentBodyMatrix;
     }

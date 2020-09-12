@@ -594,6 +594,8 @@ bool UserInputMapper::applyRoute(const Route::Pointer& route, bool force) {
         return true;
     }
 
+    static bool pptest_nofilters = true;
+
     // Fetch the value, may have been overriden by previous loopback routes
     if (source->isPose()) {
         Pose value = getPose(source, route->peek);
@@ -602,9 +604,13 @@ bool UserInputMapper::applyRoute(const Route::Pointer& route, bool force) {
         if (debugRoutes && route->debug) {
             qCDebug(controllers) << "Value was t:" << value.translation << "r:" << value.rotation;
         }
-        // Apply each of the filters.
-        for (const auto& filter : route->filters) {
-            value = filter->apply(value);
+
+        if (!pptest_nofilters)
+        {
+            // Apply each of the filters.
+            for (const auto& filter : route->filters) {
+                value = filter->apply(value);
+            }
         }
 
         if (debugRoutes && route->debug) {

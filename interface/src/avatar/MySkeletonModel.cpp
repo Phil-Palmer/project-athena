@@ -16,7 +16,7 @@
 #include "InterfaceLogging.h"
 #include "AnimUtil.h"
 
-#pragma optimize("", off)// PP
+//#pragma optimize("", off)// PP
 
 static bool pptest_noflypose = true;
 
