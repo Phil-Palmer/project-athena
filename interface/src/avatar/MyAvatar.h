@@ -1417,7 +1417,6 @@ public:
     controller::Pose getControllerPoseInSensorFrame(controller::Action action) const;
     controller::Pose getControllerPoseInWorldFrame(controller::Action action) const;
     controller::Pose getControllerPoseInAvatarFrame(controller::Action action) const;
-    glm::quat getOffHandRotation() const;
 
     bool hasDriveInput() const;
 
@@ -1709,7 +1708,7 @@ public:
 
     // derive avatar body position and orientation from the current HMD Sensor location.
     // results are in sensor frame (-z forward)
-    glm::mat4 deriveBodyFromHMDSensor() const;
+    glm::mat4 deriveBodyFromHMDSensor(const bool pptest_pretendstanding = false) const;
 
     glm::mat4 getSpine2RotationRigSpace() const;
 
@@ -1757,6 +1756,8 @@ public:
     MyAvatar::SitStandModelType getUserRecenterModel() const;
     void setIsSitStandStateLocked(bool isLocked);
     bool getIsSitStandStateLocked() const;
+    bool getForceAvatarToStandPreference() const;//pp todo comment
+    void setForceAvatarToStandPreference(const bool forceStand);//pp todo comment
     void setWalkSpeed(float value);
     float getWalkSpeed() const;
     void setWalkBackwardSpeed(float value);
@@ -2880,7 +2881,44 @@ private:
 
     FollowHelper _follow;
 
+    struct PPF2FollowHelper {
+        PPF2FollowHelper();
+
+        enum FollowType {
+            Rotation = 0,
+            Horizontal,
+            NumFollowTypes
+        };
+        float _timeRemaining[NumFollowTypes];
+
+        void deactivate();
+        void deactivate(FollowType type);
+        void activate();
+        void activate(FollowType type);
+        bool isActive() const;
+        bool isActive(FollowType followType) const;
+        float getMaxTimeRemaining() const;
+        void decrementTimeRemaining(float dt);
+        bool shouldActivateRotation(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix) const;
+        bool shouldActivateHorizontal(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix) const;
+        bool shouldActivateHorizontalCG(MyAvatar& myAvatar) const;
+        void prePhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& bodySensorMatrix, const glm::mat4& currentBodyMatrix, bool hasDriveInput);
+        glm::mat4 postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix);
+        bool getForceActivateRotation() const;
+        void setForceActivateRotation(bool val);
+        bool getForceActivateHorizontal() const;
+        void setForceActivateHorizontal(bool val);
+        bool getToggleHipsFollowing() const;
+        void setToggleHipsFollowing(bool followHead);
+        std::atomic<bool> _forceActivateRotation { false };
+        std::atomic<bool> _forceActivateHorizontal { false };
+        std::atomic<bool> _toggleHipsFollowing { true };
+    };
+
+    PPF2FollowHelper _PPF2follow;
+
     bool isFollowActive(FollowHelper::FollowType followType) const;
+    bool PPF2isFollowActive(PPF2FollowHelper::FollowType followType) const;
 
     bool _goToPending { false };
     bool _physicsSafetyPending { false };
@@ -2970,6 +3008,7 @@ private:
     bool _isInWalkingState { false };
     ThreadSafeValueCache<bool> _isInSittingState { false };
     ThreadSafeValueCache<MyAvatar::SitStandModelType> _userRecenterModel { MyAvatar::SitStandModelType::Auto };
+    ThreadSafeValueCache<bool> _forceAvatarToStandPreference { true };
     float _sitStandStateTimer { 0.0f };
     float _squatTimer { 0.0f };
     float _tippingPoint { _userHeight.get() };

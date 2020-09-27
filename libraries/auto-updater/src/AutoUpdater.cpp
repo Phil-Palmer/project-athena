@@ -212,12 +212,13 @@ void AutoUpdater::appendBuildData(const QString& versionNumber,
                                  const QString& releaseTime,
                                  const QString& releaseNotes,
                                  const QString& pullRequestNumber) {
-    
+/*  ppro: pas compatible avec les faux builds stables (assert 'a tous les frames)
+
     QMap<QString, QString> thisBuildDetails;
     thisBuildDetails.insert("downloadUrl", downloadURL);
     thisBuildDetails.insert("releaseTime", releaseTime);
     thisBuildDetails.insert("releaseNotes", releaseNotes);
     thisBuildDetails.insert("pullRequestNumber", pullRequestNumber);
     _builds.insert(ApplicationVersion(versionNumber), thisBuildDetails);
-    
+   */ 
 }

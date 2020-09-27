@@ -409,10 +409,12 @@ public:
     }
 
     void deadlockDetectionCrash() {
+    /*pprono
         setCrashAnnotation("_mod_faulting_tid", std::to_string((uint64_t)_mainThreadID));
         setCrashAnnotation("deadlock", "1");
         uint32_t* crashTrigger = nullptr;
         *crashTrigger = 0xDEAD10CC;
+        */
     }
 
     static void withPause(const std::function<void()>& lambda) {
