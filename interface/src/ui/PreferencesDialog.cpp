@@ -412,62 +412,40 @@ void setupPreferences() {
         preferences->addPreference(preference);
     }
     {
-        auto getter = [myAvatar]()->int {
-            return myAvatar->getForceAvatarToStandPreference() ? 1 : 0;
+        const IntPreference::Getter getter = [myAvatar]() -> int {
+            return static_cast<int>(myAvatar->getAllowAvatarStandingPreference());
         };
-        auto setter = [myAvatar](int value) {
-            switch (value) {
-                case 0:
-                    myAvatar->setForceAvatarToStandPreference(false);
-                    break;
-                case 1:
-                default:
-                    myAvatar->setForceAvatarToStandPreference(true);
-                    break;
-            }
+
+        const IntPreference::Setter setter = [myAvatar](const int& value) {
+            myAvatar->setAllowAvatarStandingPreference(static_cast<MyAvatar::AllowAvatarStandingPreference>(value));
         };
-        auto preference = new RadioButtonsPreference(VR_MOVEMENT, "No Force Stand / Force Stand", getter, setter);
+
+        auto preference = new RadioButtonsPreference(VR_MOVEMENT, "Allow my avatar to stand", getter, setter);
         QStringList items;
-        items << "When I'm standing" << "Always";
+        items << "When I'm standing" << "Always";// Must match the order in MyAvatar::AllowAvatarStandingPreference.
+        assert(items.size() == static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count));
         preference->setHeading("Allow my avatar to stand:");
         preference->setItems(items);
         preferences->addPreference(preference);
     }
     {
-        auto getter = [myAvatar]()->int {
-            switch (myAvatar->getUserRecenterModel()) {
-                case MyAvatar::SitStandModelType::Auto:
-                    default:
-                    return 0;
-                case MyAvatar::SitStandModelType::ForceSit:
-                    return 1;
-                case MyAvatar::SitStandModelType::ForceStand:
-                    return 2;
-                case MyAvatar::SitStandModelType::DisableHMDLean:
-                    return 3;
-            }
+        const IntPreference::Getter getter = [myAvatar]() -> int {
+            return static_cast<int>(myAvatar->getAllowAvatarLeaningPreference());
         };
-        auto setter = [myAvatar](int value) {
-            switch (value) {
-                case 0:
-                default:
-                    myAvatar->setUserRecenterModel(MyAvatar::SitStandModelType::Auto);
-                    break;
-                case 1:
-                    myAvatar->setUserRecenterModel(MyAvatar::SitStandModelType::ForceStand);
-                    break;
-                case 2:
-                    myAvatar->setUserRecenterModel(MyAvatar::SitStandModelType::ForceSit);
-                    break;
-            }
+
+        const IntPreference::Setter setter = [myAvatar](const int& value) {
+            myAvatar->setAllowAvatarLeaningPreference(static_cast<MyAvatar::AllowAvatarLeaningPreference>(value));
         };
-        auto preference = new RadioButtonsPreference(VR_MOVEMENT, "Auto / Force Stand / Force Sit", getter, setter);
+
+        auto preference = new RadioButtonsPreference(VR_MOVEMENT, "Allow my avatar to lean", getter, setter);
         QStringList items;
-        items << "When I'm standing" << "Always" << "Never";
+        items << "When I'm standing" << "Always" << "Never";// Must match the order in MyAvatar::AllowAvatarLeaningPreference.
+        assert(items.size() == static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count));
         preference->setHeading("Allow my avatar to lean:");
         preference->setItems(items);
         preferences->addPreference(preference);
     }
+ 
     {
         auto getter = [=]()->float { return myAvatar->getUserHeight(); };
         auto setter = [=](float value) { myAvatar->setUserHeight(value); };

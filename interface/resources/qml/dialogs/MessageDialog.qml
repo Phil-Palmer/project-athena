@@ -113,15 +113,18 @@ ModalWindow {
             id: informativeTextContainer
             onTextChanged: d.resize();
             wrapMode: Text.WordWrap
+            width: messageBox.width
             size: hifi.fontSizes.menuItem
             color: hifi.colors.baseGrayHighlight
             anchors {
-                top: mainTextContainer.bottom
-                left: parent.left
-                right: parent.right
+                top: parent.top
+                horizontalCenter: parent.horizontalCenter
                 margins: 0
-                topMargin: text != "" ? hifi.dimensions.contentSpacing.y : 0
+                topMargin: hifi.dimensions.contentSpacing.y
             }
+            lineHeight: 2
+            lineHeightMode: Text.ProportionalHeight
+            horizontalAlignment: Text.AlignHCenter
         }
 
         Flow {
