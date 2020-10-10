@@ -1371,9 +1371,10 @@ void Model::scaleToFit() {
 }
 
 void Model::setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, const glm::vec3& registrationPoint) {
-    if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != registrationPoint) {
+    glm::vec3 clampedRegistrationPoint = glm::clamp(registrationPoint, 0.0f, 1.0f);
+    if (_snapModelToRegistrationPoint != snapModelToRegistrationPoint || _registrationPoint != clampedRegistrationPoint) {
         _snapModelToRegistrationPoint = snapModelToRegistrationPoint;
-        _registrationPoint = registrationPoint;
+        _registrationPoint = clampedRegistrationPoint;
         _snappedToRegistrationPoint = false; // force re-centering
     }
 }
