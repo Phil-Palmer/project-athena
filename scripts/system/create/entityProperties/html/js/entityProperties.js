@@ -4745,6 +4745,7 @@ function loaded() {
 
         showGroupsForType("None");
         showPage("base");
+        showPropertyElement("modelSpecificPivotButtons", false);// Hidden until a model entitiy is selected.
         resetProperties();
         disableProperties();
 
