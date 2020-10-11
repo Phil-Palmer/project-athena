@@ -2899,8 +2899,8 @@ private:
 
         void deactivate();
         void deactivate(FollowType type);
-        void activate();
-        void activate(FollowType type);
+        //pprono? void activate();
+        void activate(FollowType type, const bool snapFollow);
         bool isActive() const;
         bool isActive(FollowType followType) const;
         float getMaxTimeRemaining() const;

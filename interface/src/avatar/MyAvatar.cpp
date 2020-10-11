@@ -4,7 +4,6 @@
 //
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
-//  Copyright 2020 Vircadia contributors.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -28,33 +27,31 @@
 #include <scripting/HMDScriptingInterface.h>
 #include <AccountManager.h>
 #include <AddressManager.h>
-#include <AnimDebugDraw.h>
-#include <AnimClip.h>
-#include <AnimInverseKinematics.h>
 #include <AudioClient.h>
 #include <ClientTraitsHandler.h>
-#include <recording/Clip.h>
-#include <recording/Deck.h>
 #include <display-plugins/DisplayPlugin.h>
-#include <recording/Frame.h>
 #include <FSTReader.h>
 #include <GeometryUtil.h>
-#include <GLMHelpers.h>
 #include <NodeList.h>
-#include <NetworkingConstants.h>
 #include <udt/PacketHeaders.h>
 #include <PathUtils.h>
 #include <PerfStat.h>
 #include <SharedUtil.h>
 #include <SoundCache.h>
 #include <ModelEntityItem.h>
+#include <GLMHelpers.h>
 #include <TextRenderer3D.h>
 #include <UserActivityLogger.h>
+#include <AnimDebugDraw.h>
+#include <AnimClip.h>
+#include <AnimInverseKinematics.h>
+#include <recording/Deck.h>
 #include <recording/Recorder.h>
+#include <recording/Clip.h>
+#include <recording/Frame.h>
 #include <RecordingScriptingInterface.h>
 #include <RenderableModelEntityItem.h>
 #include <VariantMapToScriptValue.h>
-#include <NetworkingConstants.h>
 
 #include "MyHead.h"
 #include "MySkeletonModel.h"
@@ -87,7 +84,7 @@ const int SCRIPTED_MOTOR_AVATAR_FRAME = 1;
 const int SCRIPTED_MOTOR_WORLD_FRAME = 2;
 const int SCRIPTED_MOTOR_SIMPLE_MODE = 0;
 const int SCRIPTED_MOTOR_DYNAMIC_MODE = 1;
-const QString& DEFAULT_AVATAR_COLLISION_SOUND_URL = NetworkingConstants::HF_PUBLIC_CDN_URL + "sounds/Collisions-otherorganic/Body_Hits_Impact.wav";
+const QString& DEFAULT_AVATAR_COLLISION_SOUND_URL = "https://hifi-public.s3.amazonaws.com/sounds/Collisions-otherorganic/Body_Hits_Impact.wav";
 
 const float MyAvatar::ZOOM_MIN = 0.5f;
 const float MyAvatar::ZOOM_MAX = 25.0f;
@@ -116,7 +113,7 @@ const QString POINT_BLEND_LINEAR_ALPHA_NAME = "pointBlendAlpha";
 const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
 
-static bool pptest_onlycollidewhenpushing = true;// TODO: myAvatar member, false only when foot-tracking
+
 static bool pptest_param1 = false;
 static bool pptest_param2 = false;
 static bool pptest_param3 = false;
@@ -131,6 +128,8 @@ static bool pptest_forcehorizontal = !true;// used when not lean recentre
 static bool pptest_forcesetbodytrans2 = !true;// used when not crouch recentre
 static bool pptest_forceactive = !true;
 static bool pptest_allowvertical = !false;// used when not crouch recentre
+static bool pptest_onlycollidewhenpushing = !true;  // TODO: myAvatar member, false only when foot-tracking
+static bool pptest_deriveBodyFromHMDSensor_donew = !true;
 /*/
 //pp
 static bool pptest_forcerotation = true;// used when not lean recentre
@@ -138,7 +137,12 @@ static bool pptest_forcehorizontal = true;// used when not lean recentre
 static bool pptest_forcesetbodytrans2 = true;// used when not crouch recentre
 static bool pptest_forceactive = true;
 static bool pptest_allowvertical = false;// used when not crouch recentre
+static bool pptest_onlycollidewhenpushing = true;// TODO: myAvatar member, false only when foot-tracking
+static bool pptest_deriveBodyFromHMDSensor_donew = true;
 //*/
+
+bool pptest_snapfollow = true;
+
 const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
     QStringLiteral("WhenUserIsStanding"),
     QStringLiteral("Always"),
@@ -4902,20 +4906,17 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
         pp_forcedBodyPosY = -footPos.y;
     }
 
-        // PPTEST
-    static bool pptest_donew = true;
-    static bool pptest_180 = true;
-    if (pptest_donew)
+    
+    if (pptest_deriveBodyFromHMDSensor_donew)
     {
         const controller::Pose hipsControllerPose = getControllerPoseInSensorFrame(controller::Action::HIPS);
 
         if (hipsControllerPose.isValid())
         {
             glm::quat hipsOrientation = hipsControllerPose.rotation;
-            if (pptest_180)
-            {
-                hipsOrientation *= Quaternions::Y_180;// todo flip in avatar space?
-            }
+ 
+            hipsOrientation *= Quaternions::Y_180;// todo flip in avatar space?
+ 
 
             const glm::quat hipsOrientationYawOnly = cancelOutRollAndPitch(hipsOrientation);
 
@@ -5714,10 +5715,12 @@ void MyAvatar::FollowHelper::deactivate(FollowType type) {
     _timeRemaining[(int)type] = 0.0f;
 }
 
-void MyAvatar::FollowHelper::activate(FollowType type) {
+
+// pp todo comment snapFollow
+void MyAvatar::FollowHelper::activate(FollowType type, const bool snapFollow) {
     assert(type >= 0 && type < NumFollowTypes);
     // TODO: Perhaps, the follow time should be proportional to the displacement.
-    _timeRemaining[(int)type] = FOLLOW_TIME;
+    _timeRemaining[(int)type] = snapFollow ? FLT_MAX : FOLLOW_TIME;
 }
 bool MyAvatar::FollowHelper::isActive(FollowType type) const {
     assert(type >= 0 && type < NumFollowTypes);
@@ -5882,14 +5885,14 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
 
     if (myAvatar.getHMDLeanRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
         if (!isActive(Rotation) && (shouldActivateRotation(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-            activate(Rotation);
+            activate(Rotation, false);
             myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
         }
         if (myAvatar.getCenterOfGravityModelEnabled()) {
             if (!isActive(Horizontal) && (shouldActivateHorizontalCG(myAvatar) || hasDriveInput)) {
-                activate(Horizontal);
+                activate(Horizontal, false);
                 if (myAvatar.getEnableStepResetRotation()) {
-                    activate(Rotation);
+                    activate(Rotation, false);
                     myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
                 }
             }
@@ -5897,22 +5900,22 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
             // center of gravity model is not enabled
             if (!isActive(Horizontal) &&
                 (shouldActivateHorizontal(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-                activate(Horizontal);
+                activate(Horizontal, false);
                 if (myAvatar.getEnableStepResetRotation() && !myAvatar.getIsInSittingState()) {
-                    activate(Rotation);
+                    activate(Rotation, false);
                     myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
                 }
             }
         }
     } else {
         if (pptest_forcerotation || (!isActive(Rotation) && getForceActivateRotation())) {
-            activate(Rotation);
+            activate(Rotation, pptest_snapfollow);
             myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
             setForceActivateRotation(false);
         }
 
         if (pptest_forcehorizontal || (!isActive(Horizontal) && getForceActivateHorizontal())) {
-            activate(Horizontal);
+            activate(Horizontal, pptest_snapfollow);
             setForceActivateHorizontal(false);
         }
     }
@@ -5920,14 +5923,14 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
     if (myAvatar.getHMDCrouchRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
         if (!isActive(Vertical) &&
             (shouldActivateVertical(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-            activate(Vertical);
+            activate(Vertical, false);
             if (_squatDetected) {
                 _squatDetected = false;
             }
         }
     } else if (pptest_allowvertical) {
         if (!isActive(Vertical) && getForceActivateVertical()) {
-            activate(Vertical);
+            activate(Vertical, pptest_snapfollow);
             setForceActivateVertical(false);
         }
     }
@@ -6422,7 +6425,7 @@ bool MyAvatar::endReaction(QString reactionName) {
         } else {
             _reactionEnabledRefCounts[reactionIndex] = 0;
             wasReactionActive = false;
-        }    _allowAvatarLeaningPreferenceSetting.set(allowAvatarLeaningPreferenceStrings[getUserRecenterModel()]);
+        }
         if (reactionName == POINT_REACTION_NAME) {
             _pointAtActive = _reactionEnabledRefCounts[reactionIndex] > 0;
         }

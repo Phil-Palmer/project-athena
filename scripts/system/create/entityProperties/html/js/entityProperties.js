@@ -1403,7 +1403,6 @@ const GROUPS = [
                 decimals: 4,
                 subLabels: [ "x", "y", "z" ],
                 unit: "(ratio of dimension)",
-                buttons: [ { id: "originalMeshPivot", label: "Use Mesh Pivot", className: "red", onClick: useOriginalMeshPivot } ],
                 propertyID: "registrationPoint",
             },
             {
