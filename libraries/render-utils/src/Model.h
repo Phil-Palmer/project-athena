@@ -214,6 +214,9 @@ public:
     void setSnapModelToCenter(bool snapModelToCenter) {
         setSnapModelToRegistrationPoint(snapModelToCenter, glm::vec3(0.5f,0.5f,0.5f));
     };
+    bool getSnapModelToCenter() {
+        return _snapModelToRegistrationPoint && _registrationPoint == glm::vec3(0.5f,0.5f,0.5f);
+    }
 
     /// Returns the number of joint states in the model.
     int getJointStateCount() const { return (int)_rig.getJointStateCount(); }
