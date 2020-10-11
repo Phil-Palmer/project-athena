@@ -67,14 +67,20 @@ static AnimPose computeHipsInSensorFrame(MyAvatar* myAvatar, bool isFlying) {
         return result;
     }
 
+    const bool useCenterOfGravityModel = !isFlying && myAvatar->getCenterOfGravityModelEnabled() && 
+                                         !myAvatar->getIsInWalkingState() && !myAvatar->getIsInSittingState() && myAvatar->getHMDLeanRecenterEnabled() &&
+                                         myAvatar->getHMDCrouchRecenterEnabled();// pp todo comment?: without this check, we'd see the pop from one hip-placement method to another after crouching for SITTING_TIMEOUT (in mode 'stand when I`m standing').
+
     glm::mat4 hipsMat;
-    if (myAvatar->getCenterOfGravityModelEnabled() && !isFlying && !(myAvatar->getIsInWalkingState()) && !(myAvatar->getIsInSittingState()) && myAvatar->getHMDLeanRecenterEnabled()) {
+    if (useCenterOfGravityModel) {
         // then we use center of gravity model
         hipsMat = myAvatar->deriveBodyUsingCgModel();
-    } else {
+    }
+    else {
         // otherwise use the default of putting the hips under the head
         hipsMat = myAvatar->deriveBodyFromHMDSensor();
     }
+
     glm::vec3 hipsPos = extractTranslation(hipsMat);
     glm::quat hipsRot = glmExtractRotation(hipsMat);
 
@@ -84,7 +90,7 @@ static AnimPose computeHipsInSensorFrame(MyAvatar* myAvatar, bool isFlying) {
 
     // dampen hips rotation, by mixing it with the avatar orientation in sensor space
     // turning this off for center of gravity model because it is already mixed in there
-    if (!(myAvatar->getCenterOfGravityModelEnabled())) {
+    if (!useCenterOfGravityModel) {
         const float MIX_RATIO = 0.5f;
         hipsRot = safeLerp(glmExtractRotation(avatarToSensorMat), hipsRot, MIX_RATIO);
     }

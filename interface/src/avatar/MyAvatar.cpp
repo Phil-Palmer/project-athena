@@ -121,7 +121,7 @@ static bool pptest_param4 = false;
 static bool pptest_param5 = false;
 static bool pptest_param6 = false;
 
-//*
+/*
 // PF
 static bool pptest_forcerotation = !true;// used when not lean recentre
 static bool pptest_forcehorizontal = !true;// used when not lean recentre
@@ -137,7 +137,7 @@ static bool pptest_forcehorizontal = true;// used when not lean recentre
 static bool pptest_forcesetbodytrans2 = true;// used when not crouch recentre
 static bool pptest_forceactive = true;
 static bool pptest_allowvertical = false;// used when not crouch recentre
-static bool pptest_onlycollidewhenpushing = true;// TODO: myAvatar member, false only when foot-tracking
+static bool pptest_onlycollidewhenpushing = false;//todo true;// TODO: myAvatar member, false only when foot-tracking
 static bool pptest_deriveBodyFromHMDSensor_donew = true;
 //*/
 
@@ -5414,11 +5414,7 @@ void MyAvatar::setIsInSittingState(bool isSitting) {
     // on reset height we need the count to be more than one in case the user sits and stands up quickly.
     _isInSittingState.set(isSitting);
     setResetMode(true);
-    if (isSitting) {
-        setCenterOfGravityModelEnabled(false);
-    } else {
-        setCenterOfGravityModelEnabled(true);
-    }
+    setCenterOfGravityModelEnabled(!isSitting);
     setSitStandStateChange(true);
 }
 
