@@ -4897,13 +4897,14 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
 
     static float pptest_pretendstandingHeight = 1.f;
     static bool pptest_usecalcedheight = true;
+    static float pptest_pretendstandingOffset = -0.011f;
     float pp_forcedBodyPosY = pptest_pretendstandingHeight;
     {
         int footIndex = rig.indexOfJoint("LeftFoot");
         glm::vec3 footPos = footIndex != -1 ? rig.getAbsoluteDefaultPose(footIndex).trans() : DEFAULT_AVATAR_LEFTFOOT_POS;
         footPos *= invSensorToWorldScale;
 
-        pp_forcedBodyPosY = -footPos.y;
+        pp_forcedBodyPosY = -footPos.y + pptest_pretendstandingOffset;
     }
 
     
