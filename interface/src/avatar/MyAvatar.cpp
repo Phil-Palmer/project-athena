@@ -343,7 +343,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     // when we leave a domain we lift whatever restrictions that domain may have placed on our scale
     connect(&domainHandler, &DomainHandler::disconnectedFromDomain, this, &MyAvatar::leaveDomain);
 
-    _bodySensorMatrix = deriveBodyFromHMDSensor(pptest_param1);
+    _bodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled());
 
     using namespace recording;
 
@@ -569,7 +569,7 @@ void MyAvatar::centerBody() {
     }
 
     // derive the desired body orientation from the current hmd orientation, before the sensor reset.
-    auto newBodySensorMatrix = deriveBodyFromHMDSensor(pptest_param2); // Based on current cached HMD position/rotation..
+    auto newBodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()); // Based on current cached HMD position/rotation..
 
     // transform this body into world space
     auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
@@ -622,7 +622,7 @@ void MyAvatar::reset(bool andRecenter, bool andReload, bool andHead) {
 
     if (andRecenter) {
         // derive the desired body orientation from the *old* hmd orientation, before the sensor reset.
-        auto newBodySensorMatrix = deriveBodyFromHMDSensor(pptest_param3); // Based on current cached HMD position/rotation..
+        auto newBodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()); // Based on current cached HMD position/rotation..
 
         // transform this body into world space
         auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
@@ -638,7 +638,7 @@ void MyAvatar::reset(bool andRecenter, bool andReload, bool andHead) {
         updateFromHMDSensorMatrix(identity);
 
         // update the body in sensor space using the new hmd sensor sample
-        _bodySensorMatrix = deriveBodyFromHMDSensor(pptest_param4);
+        _bodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled());
 
         // rebuild the sensor to world matrix such that, the HMD will point in the desired orientation.
         // i.e. the along avatar's current position and orientation.
@@ -2820,7 +2820,7 @@ void MyAvatar::prepareForPhysicsSimulation() {
     _characterController.setPositionAndOrientation(getWorldPosition(), getWorldOrientation());
     auto headPose = getControllerPoseInAvatarFrame(controller::Action::HEAD);
     if (headPose.isValid()) {
-        _follow.prePhysicsUpdate(*this, deriveBodyFromHMDSensor(), _bodySensorMatrix, hasDriveInput());
+        _follow.prePhysicsUpdate(*this, deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()), _bodySensorMatrix, hasDriveInput());
     } else {
         _follow.deactivate();
     }
@@ -3204,7 +3204,7 @@ void MyAvatar::destroyAnimGraph() {
 }
 
 void MyAvatar::animGraphLoaded() {
-    _bodySensorMatrix = deriveBodyFromHMDSensor(pptest_param6); // Based on current cached HMD position/rotation..
+    _bodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()); // Based on current cached HMD position/rotation..
     updateSensorToWorldMatrix(); // Uses updated position/orientation and _bodySensorMatrix changes
     _isAnimatingScale = true;
     _cauterizationNeedsUpdate = true;
@@ -4897,14 +4897,51 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
 
     static float pptest_pretendstandingHeight = 1.f;
     static bool pptest_usecalcedheight = true;
-    static float pptest_pretendstandingOffset = -0.011f;
+    static float pptest_pretendstandingOffset_mode0 = 0.11f;
+    static float pptest_pretendstandingOffset_mode1 = 0;
+    static int pptest_pretendstandingmode = 4;// en mode 1 on peut pas monter des pentes/marches!
     float pp_forcedBodyPosY = pptest_pretendstandingHeight;
     {
-        int footIndex = rig.indexOfJoint("LeftFoot");
-        glm::vec3 footPos = footIndex != -1 ? rig.getAbsoluteDefaultPose(footIndex).trans() : DEFAULT_AVATAR_LEFTFOOT_POS;
-        footPos *= invSensorToWorldScale;
+        if (pptest_pretendstandingmode == 0) {
+            int footIndex = rig.indexOfJoint("LeftFoot");
+            glm::vec3 footPos = footIndex != -1 ? rig.getAbsoluteDefaultPose(footIndex).trans() : DEFAULT_AVATAR_LEFTFOOT_POS;
+            footPos *= invSensorToWorldScale;
 
-        pp_forcedBodyPosY = -footPos.y + pptest_pretendstandingOffset;
+            pp_forcedBodyPosY = -footPos.y + pptest_pretendstandingOffset_mode0;
+        }
+        else if(pptest_pretendstandingmode == 1) {
+            glm::mat4 rigToAvatarMatrix = Matrices::Y_180;
+            glm::mat4 avatarToWorldMatrix = getTransform().getMatrix();// ref: deriveBodyUsingCgModel
+            glm::mat4 sensorToWorldMatrix = getSensorToWorldMatrix();
+            glm::mat4 rigToSensorMatrix = glm::inverse(sensorToWorldMatrix) * avatarToWorldMatrix * rigToAvatarMatrix;
+
+            int hipsIndex = rig.indexOfJoint("Hips");
+            glm::vec3 hipsPos = hipsIndex != -1 ? rig.getAbsoluteDefaultPose(hipsIndex).trans() : DEFAULT_AVATAR_HIPS_POS;// rig space
+
+            hipsPos = transformPoint(rigToSensorMatrix, hipsPos);
+
+            pp_forcedBodyPosY = hipsPos.y + pptest_pretendstandingOffset_mode1;
+        } else if (pptest_pretendstandingmode == 2) {
+            pp_forcedBodyPosY = _characterController.getCapsuleHalfHeight() + _characterController.getCapsuleRadius();
+        } else if (pptest_pretendstandingmode == 3) {
+            glm::mat4 avatarToWorldMatrix = getTransform().getMatrix();  // ref: deriveBodyUsingCgModel
+            glm::mat4 sensorToWorldMatrix = getSensorToWorldMatrix();
+
+            auto avatarPos = extractTranslation(avatarToWorldMatrix);
+            auto sensorPos = extractTranslation(sensorToWorldMatrix);
+
+            pp_forcedBodyPosY = avatarPos.y - sensorPos.y;
+
+            int g=0;
+            g++;
+            g = 0;
+        } else if (pptest_pretendstandingmode == 4) {
+            pp_forcedBodyPosY = rig.getUnscaledHipsHeight();
+
+            int g = 0;
+            g++;
+            g = 0;
+        }
     }
 
     
@@ -5988,7 +6025,7 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
             if (myAvatar.getSitStandStateChange()) {
                 myAvatar.setSitStandStateChange(false);
                 deactivate(Vertical);
-                setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor()));
+                setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(false)));
             }
         } else if (pptest_forcesetbodytrans2) {
             setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(true)));

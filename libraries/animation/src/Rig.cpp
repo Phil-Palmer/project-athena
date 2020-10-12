@@ -35,6 +35,8 @@
 #include "IKTarget.h"
 #include "PathUtils.h"
 
+#pragma optimize("", off)  // PP
+
 static int nextRigId = 1;
 static std::map<int, Rig*> rigRegistry;
 static std::mutex rigRegistryMutex;
@@ -2793,6 +2795,32 @@ float Rig::getUnscaledEyeHeight() const {
         return scaleFactor * (neckHeight + neckHeight * ratio);
     } else {
         return DEFAULT_AVATAR_EYE_HEIGHT;
+    }
+}
+
+// pptest
+float Rig::getUnscaledHipsHeight() const {
+    // Normally the model offset transform will contain the avatar scale factor, we explicitly remove it here.
+    AnimPose modelOffsetWithoutAvatarScale(glm::vec3(1.0f), getModelOffsetPose().rot(), getModelOffsetPose().trans());
+    AnimPose geomToRigWithoutAvatarScale = modelOffsetWithoutAvatarScale * getGeometryOffsetPose();
+
+    // This factor can be used to scale distances in the geometry frame into the unscaled rig frame.
+    // Typically it will be the unit conversion from cm to m.
+    float scaleFactor = geomToRigWithoutAvatarScale.scale().x;  // in practice this always a uniform scale factor.
+
+    const int hipsJoint = indexOfJoint("Hips");
+
+    // Makes assumption that the y = 0 plane in geometry is the ground plane.
+    // We also make that assumption in Rig::computeAvatarBoundingCapsule()
+    const float GROUND_Y = 0.0f;
+
+    // Values from the skeleton are in the geometry coordinate frame.
+    if (hipsJoint >= 0) {
+        // Measure hip joint to y = 0 plane.
+        float hipsHeight = getAnimSkeleton()->getAbsoluteDefaultPose(hipsJoint).trans().y - GROUND_Y;
+        return scaleFactor * hipsHeight;
+    } else {
+        return 1.022f;//todo? DEFAULT_AVATAR_HIPS_HEIGHT;
     }
 }
 

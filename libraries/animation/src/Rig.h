@@ -251,6 +251,7 @@ public:
     Flow& getFlow() { return _internalFlow; }
 
     float getUnscaledEyeHeight() const;
+    float getUnscaledHipsHeight() const;
     void buildAbsoluteRigPoses(const AnimPoseVec& relativePoses, AnimPoseVec& absolutePosesOut) const;
 
     int getOverrideJointCount() const;
