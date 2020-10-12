@@ -212,7 +212,7 @@ void AutoUpdater::appendBuildData(const QString& versionNumber,
                                  const QString& releaseTime,
                                  const QString& releaseNotes,
                                  const QString& pullRequestNumber) {
-
+    
     QMap<QString, QString> thisBuildDetails;
     thisBuildDetails.insert("downloadUrl", downloadURL);
     thisBuildDetails.insert("releaseTime", releaseTime);
