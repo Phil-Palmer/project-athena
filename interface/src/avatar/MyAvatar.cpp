@@ -137,7 +137,6 @@ static bool pptest_forcehorizontal = true;// used when not lean recentre
 static bool pptest_forcesetbodytrans2 = true;// used when not crouch recentre
 static bool pptest_forceactive = true;
 static bool pptest_allowvertical = false;// used when not crouch recentre
-static bool pptest_onlycollidewhenpushing = false;//todo true;// TODO: myAvatar member, false only when foot-tracking
 static bool pptest_deriveBodyFromHMDSensor_donew = true;
 //*/
 
@@ -4034,15 +4033,6 @@ void MyAvatar::updateActionMotor(float deltaTime) {
     // May need to change view if boom length has changed
     if (previousBoomLength != _boomLength) {
         qApp->changeViewAsNeeded(_boomLength);
-    }
-
-    if (pptest_onlycollidewhenpushing)
-    {
-        _characterController.setCollisionless(!hasDriveInput());//!_isPushing
-    }
-    else
-    {
-        _characterController.setCollisionless(false);
     }
 }
 
