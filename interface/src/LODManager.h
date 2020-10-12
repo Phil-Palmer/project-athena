@@ -351,7 +351,7 @@ private:
     void setWorldDetailQuality(WorldDetailQuality quality, bool isHMDMode);
 
     std::mutex _automaticLODLock;
-    bool _automaticLODAdjust = false;//pprono true;
+    bool _automaticLODAdjust = true;
 
     float _presentTime{ 0.0f }; // msec
     float _engineRunTime{ 0.0f }; // msec
