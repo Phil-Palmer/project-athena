@@ -26,31 +26,13 @@ class QJsonValue;
 
 inline bool isValidScale(glm::vec3 scale) {
     bool result = scale.x != 0.0f && scale.y != 0.0f && scale.z != 0.0f;
-    /*pprospam
     assert(result);
-    /*/
-    if (!result)
-    {
-        int s=0;
-        s++;
-        s=0;
-    }
-    //*/
     return result;
 }
 
 inline bool isValidScale(float scale) {
     bool result = scale != 0.0f && !glm::isnan(scale) && !glm::isinf(scale);
-    /*pprospam
     assert(result);
-    /*/
-    if (!result)
-    {
-        int s=0;
-        s++;
-        s=0;
-    }
-    //*/
     return result;
 }
 
