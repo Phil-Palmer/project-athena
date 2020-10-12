@@ -282,12 +282,11 @@ class MyAvatar : public Avatar {
      *     <p><strong>Warning:</strong> Setting this value also sets the value of <code>analogPlusSprintSpeed</code> to twice 
      *     the value.</p>
      * @property {number} analogPlusSprintSpeed - The sprint (run) speed of your avatar for the "AnalogPlus" control scheme.
-     * @property {MyAvatar.SitStandModelType} userRecenterModel - Controls avatar leaning and recentering behavior.
-     * @property {number} isInSittingState - <code>true</code> if the user wearing the HMD is determined to be sitting
-     *     (avatar leaning is disabled, recentering is enabled), <code>false</code> if the user wearing the HMD is
-     *     determined to be standing (avatar leaning is enabled, and avatar recenters if it leans too far).
-     *     If <code>userRecenterModel == 2</code> (i.e., "auto") the property value automatically updates as the user sits
-     *     or stands, unless <code>isSitStandStateLocked == true</code>. Setting the property value overrides the current
+     * @property {number} isInSittingState - <code>true</code> if the user wearing the HMD is determined to be sitting;
+     *     <code>false</code> if the user wearing the HMD is determined to be standing.  This can affect whether the avatar
+     *     is allowed to stand, lean or recenter its footing, depending on user preferences.
+     *     The property value automatically updates as the user sits or stands, unless
+     *     <code>isSitStandStateLocked == true</code>. Setting the property value overrides the current
      *     sitting / standing state, which is updated when the user next sits or stands unless
      *     <code>isSitStandStateLocked == true</code>.
      * @property {boolean} isSitStandStateLocked - <code>true</code> to lock the avatar sitting/standing state, i.e., use this 
@@ -414,11 +413,10 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(float walkBackwardSpeed READ getWalkBackwardSpeed WRITE setWalkBackwardSpeed NOTIFY walkBackwardSpeedChanged);
     Q_PROPERTY(float sprintSpeed READ getSprintSpeed WRITE setSprintSpeed NOTIFY sprintSpeedChanged);
     Q_PROPERTY(bool isInSittingState READ getIsInSittingState WRITE setIsInSittingState);
-    Q_PROPERTY(MyAvatar::SitStandModelType userRecenterModel READ getUserRecenterModel WRITE setUserRecenterModel);
-    Q_PROPERTY(MyAvatar::AllowAvatarStandingPreference allowAvatarStandingPreference READ getAllowAvatarStandingPreference WRITE
+ /*pp todo removeme   Q_PROPERTY(MyAvatar::AllowAvatarStandingPreference allowAvatarStandingPreference READ getAllowAvatarStandingPreference WRITE
                    setAllowAvatarStandingPreference);
     Q_PROPERTY(MyAvatar::AllowAvatarLeaningPreference allowAvatarLeaningPreference READ getAllowAvatarLeaningPreference WRITE
-                   setAllowAvatarLeaningPreference);
+                   setAllowAvatarLeaningPreference);*/
     Q_PROPERTY(bool isSitStandStateLocked READ getIsSitStandStateLocked WRITE setIsSitStandStateLocked);
     Q_PROPERTY(bool allowTeleporting READ getAllowTeleporting)
 
@@ -1797,8 +1795,6 @@ public:
     bool getIsInWalkingState() const;
     void setIsInSittingState(bool isSitting);
     bool getIsInSittingState() const;
-    void setUserRecenterModel(MyAvatar::SitStandModelType modelName);
-    MyAvatar::SitStandModelType getUserRecenterModel() const;
     void setAllowAvatarStandingPreference(const AllowAvatarStandingPreference preference);
     AllowAvatarStandingPreference getAllowAvatarStandingPreference() const;
     void setAllowAvatarLeaningPreference(const AllowAvatarLeaningPreference preference);
@@ -2899,7 +2895,6 @@ private:
 
         void deactivate();
         void deactivate(FollowType type);
-        //pprono? void activate();
         void activate(FollowType type, const bool snapFollow);
         bool isActive() const;
         bool isActive(FollowType followType) const;
@@ -2970,7 +2965,7 @@ private:
 
     bool _centerOfGravityModelEnabled { true };
     bool _hmdLeanRecenterEnabled { true };
-    bool _hmdCrouchRecenterEnabled{ true };// pp todo comment
+    bool _hmdCrouchRecenterEnabled{ true };// pp todo comment, todo rename sitRece
     bool _sprint { false };
 
     AnimPose _prePhysicsRoomPose;
@@ -3018,7 +3013,6 @@ private:
     float _walkSpeedScalar { AVATAR_WALK_SPEED_SCALAR };
     bool _isInWalkingState { false };
     ThreadSafeValueCache<bool> _isInSittingState { false };
-    ThreadSafeValueCache<MyAvatar::SitStandModelType> _userRecenterModel { MyAvatar::SitStandModelType::Auto };
     ThreadSafeValueCache<MyAvatar::AllowAvatarStandingPreference> _allowAvatarStandingPreference{
         MyAvatar::AllowAvatarStandingPreference::Default
     };
@@ -3067,7 +3061,6 @@ private:
     Setting::Handle<int> _controlSchemeIndexSetting;
     std::vector<Setting::Handle<QUuid>> _avatarEntityIDSettings;
     std::vector<Setting::Handle<QByteArray>> _avatarEntityDataSettings;
-    Setting::Handle<QString> _userRecenterModelSetting;
     Setting::Handle<QString> _allowAvatarStandingPreferenceSetting;
     Setting::Handle<QString> _allowAvatarLeaningPreferenceSetting;
 

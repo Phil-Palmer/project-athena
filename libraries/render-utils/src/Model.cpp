@@ -1373,10 +1373,10 @@ void Model::setSnapModelToRegistrationPoint(bool snapModelToRegistrationPoint, c
 void Model::snapToRegistrationPoint() {
     Extents modelMeshExtents = getUnscaledMeshExtents();
     glm::vec3 dimensions = (modelMeshExtents.maximum - modelMeshExtents.minimum);
-        glm::vec3 offset = -modelMeshExtents.minimum - (dimensions * _registrationPoint);
-        _offset = offset;
-        _snappedToRegistrationPoint = true;
-    }
+    glm::vec3 offset = -modelMeshExtents.minimum - (dimensions * _registrationPoint);
+    _offset = offset;
+    _snappedToRegistrationPoint = true;
+}
 
 void Model::setUseDualQuaternionSkinning(bool value) {
     _useDualQuaternionSkinning = value;

@@ -4,6 +4,7 @@
 //
 //  Created by Mark Peng on 8/16/13.
 //  Copyright 2012 High Fidelity, Inc.
+//  Copyright 2020 Vircadia contributors.
 //
 //  Distributed under the Apache License, Version 2.0.
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
@@ -27,31 +28,40 @@
 #include <scripting/HMDScriptingInterface.h>
 #include <AccountManager.h>
 #include <AddressManager.h>
+#include <AnimDebugDraw.h>
+#include <AnimClip.h>
+#include <AnimInverseKinematics.h>
 #include <AudioClient.h>
 #include <ClientTraitsHandler.h>
+#include <recording/Clip.h>
+#include <recording/Deck.h>
 #include <display-plugins/DisplayPlugin.h>
+#include <recording/Frame.h>
 #include <FSTReader.h>
 #include <GeometryUtil.h>
+#include <GLMHelpers.h>
 #include <NodeList.h>
+#include <NetworkingConstants.h>
 #include <udt/PacketHeaders.h>
 #include <PathUtils.h>
 #include <PerfStat.h>
 #include <SharedUtil.h>
 #include <SoundCache.h>
 #include <ModelEntityItem.h>
-#include <GLMHelpers.h>
+//#include <GLMHelpers.h>
 #include <TextRenderer3D.h>
 #include <UserActivityLogger.h>
-#include <AnimDebugDraw.h>
-#include <AnimClip.h>
-#include <AnimInverseKinematics.h>
-#include <recording/Deck.h>
+//#include <AnimDebugDraw.h>
+//#include <AnimClip.h>
+//#include <AnimInverseKinematics.h>
+//#include <recording/Deck.h>
 #include <recording/Recorder.h>
-#include <recording/Clip.h>
-#include <recording/Frame.h>
+//#include <recording/Clip.h>
+//#include <recording/Frame.h>
 #include <RecordingScriptingInterface.h>
 #include <RenderableModelEntityItem.h>
 #include <VariantMapToScriptValue.h>
+#include <NetworkingConstants.h>
 
 #include "MyHead.h"
 #include "MySkeletonModel.h"
@@ -84,7 +94,7 @@ const int SCRIPTED_MOTOR_AVATAR_FRAME = 1;
 const int SCRIPTED_MOTOR_WORLD_FRAME = 2;
 const int SCRIPTED_MOTOR_SIMPLE_MODE = 0;
 const int SCRIPTED_MOTOR_DYNAMIC_MODE = 1;
-const QString& DEFAULT_AVATAR_COLLISION_SOUND_URL = "https://hifi-public.s3.amazonaws.com/sounds/Collisions-otherorganic/Body_Hits_Impact.wav";
+const QString& DEFAULT_AVATAR_COLLISION_SOUND_URL = NetworkingConstants::HF_PUBLIC_CDN_URL + "sounds/Collisions-otherorganic/Body_Hits_Impact.wav";
 
 const float MyAvatar::ZOOM_MIN = 0.5f;
 const float MyAvatar::ZOOM_MAX = 25.0f;
@@ -94,11 +104,6 @@ const int MODE_READINGS_RING_BUFFER_SIZE = 500;
 const float CENTIMETERS_PER_METER = 100.0f;
 
 const QString AVATAR_SETTINGS_GROUP_NAME { "Avatar" };
-
-static const QString USER_RECENTER_MODEL_FORCE_SIT = QStringLiteral("ForceSit");
-static const QString USER_RECENTER_MODEL_FORCE_STAND = QStringLiteral("ForceStand");
-static const QString USER_RECENTER_MODEL_AUTO = QStringLiteral("Auto");
-static const QString USER_RECENTER_MODEL_DISABLE_HMD_LEAN = QStringLiteral("DisableHMDLean");
 
 static const QString ALLOW_AVATAR_STANDING_ALWAYS = QStringLiteral("Always");
 static const QString ALLOW_AVATAR_STANDING_WHEN_USER_IS_STANDING = QStringLiteral("UserStanding");
@@ -114,33 +119,14 @@ const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
 
 
-static bool pptest_param1 = false;
-static bool pptest_param2 = false;
-static bool pptest_param3 = false;
-static bool pptest_param4 = false;
-static bool pptest_param5 = false;
-static bool pptest_param6 = false;
 
-/*
-// PF
-static bool pptest_forcerotation = !true;// used when not lean recentre
-static bool pptest_forcehorizontal = !true;// used when not lean recentre
-static bool pptest_forcesetbodytrans2 = !true;// used when not crouch recentre
-static bool pptest_forceactive = !true;
-static bool pptest_allowvertical = !false;// used when not crouch recentre
-static bool pptest_onlycollidewhenpushing = !true;  // TODO: myAvatar member, false only when foot-tracking
-static bool pptest_deriveBodyFromHMDSensor_donew = !true;
-/*/
-//pp
 static bool pptest_forcerotation = true;// used when not lean recentre
 static bool pptest_forcehorizontal = true;// used when not lean recentre
 static bool pptest_forcesetbodytrans2 = true;// used when not crouch recentre
 static bool pptest_forceactive = true;
 static bool pptest_allowvertical = false;// used when not crouch recentre
 static bool pptest_deriveBodyFromHMDSensor_donew = true;
-//*/
-
-bool pptest_snapfollow = true;
+static bool pptest_snapfollow = true;
 
 const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
     QStringLiteral("WhenUserIsStanding"),
@@ -160,32 +146,6 @@ static_assert(sizeof(MyAvatar::allowAvatarLeaningPreferenceStrings) ==
                   sizeof(*MyAvatar::allowAvatarLeaningPreferenceStrings) *
                       static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count),
               "Wrong number of intiialisers for array");
-
-MyAvatar::SitStandModelType stringToUserRecenterModel(const QString& str) {
-    if (str == USER_RECENTER_MODEL_FORCE_SIT) {
-        return MyAvatar::ForceSit;
-    } else if (str == USER_RECENTER_MODEL_FORCE_STAND) {
-        return MyAvatar::ForceStand;
-    } else if (str == USER_RECENTER_MODEL_DISABLE_HMD_LEAN) {
-        return MyAvatar::DisableHMDLean;
-    } else {
-        return MyAvatar::Auto;
-    }
-}
-
-QString userRecenterModelToString(MyAvatar::SitStandModelType model) {
-    switch (model) {
-    case MyAvatar::ForceSit:
-        return USER_RECENTER_MODEL_FORCE_SIT;
-    case MyAvatar::ForceStand:
-        return USER_RECENTER_MODEL_FORCE_STAND;
-    case MyAvatar::DisableHMDLean:
-        return USER_RECENTER_MODEL_DISABLE_HMD_LEAN;
-    case MyAvatar::Auto:
-    default:
-        return USER_RECENTER_MODEL_AUTO;
-    }
-}
 
 MyAvatar::AllowAvatarStandingPreference stringToAllowAvatarStandingPreference(const QString& str) {
     for (uint stringIndex = 0; stringIndex < static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count); stringIndex++) {
@@ -284,7 +244,6 @@ MyAvatar::MyAvatar(QThread* thread) :
     _analogWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "analogWalkSpeed", _analogWalkSpeed.get()),
     _analogPlusWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "analogPlusWalkSpeed", _analogPlusWalkSpeed.get()),
     _controlSchemeIndexSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "controlSchemeIndex", _controlSchemeIndex),
-    _userRecenterModelSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "userRecenterModel", USER_RECENTER_MODEL_AUTO),
     _allowAvatarStandingPreferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "allowAvatarStandingPreference",
         allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Default)]),
     _allowAvatarLeaningPreferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "allowAvatarLeaningPreference",
@@ -767,7 +726,6 @@ void MyAvatar::update(float deltaTime) {
     float angleSpine2 = glm::dot(upSpine2, glm::vec3(0.0f, 1.0f, 0.0f));
 
     if (getHMDCrouchRecenterEnabled() &&
-        (getUserRecenterModel() != MyAvatar::SitStandModelType::ForceStand) && 
         (angleSpine2 > COSINE_THIRTY_DEGREES) &&// if the spine is within +/-30° of vertical
         getControllerPoseInAvatarFrame(controller::Action::HEAD).getTranslation().y < (headDefaultPositionAvatarSpace.y - SQUAT_THRESHOLD)
         ) {
@@ -1389,7 +1347,6 @@ void MyAvatar::saveData() {
     _analogWalkSpeedSetting.set(getAnalogWalkSpeed());
     _analogPlusWalkSpeedSetting.set(getAnalogPlusWalkSpeed());
     _controlSchemeIndexSetting.set(getControlSchemeIndex());
-    _userRecenterModelSetting.set(userRecenterModelToString(getUserRecenterModel()));
     _allowAvatarStandingPreferenceSetting.set(allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
     _allowAvatarLeaningPreferenceSetting.set(allowAvatarLeaningPreferenceStrings[static_cast<uint>(getAllowAvatarLeaningPreference())]);
 
@@ -2084,7 +2041,6 @@ void MyAvatar::loadData() {
     setUserHeight(_userHeightSetting.get(DEFAULT_AVATAR_HEIGHT));
     setTargetScale(_scaleSetting.get());
 
-    setUserRecenterModel(stringToUserRecenterModel(_userRecenterModelSetting.get(USER_RECENTER_MODEL_AUTO)));
     setAllowAvatarStandingPreference(stringToAllowAvatarStandingPreference(_allowAvatarStandingPreferenceSetting.get(
         allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Default)])));
     setAllowAvatarLeaningPreference(stringToAllowAvatarLeaningPreference(_allowAvatarLeaningPreferenceSetting.get(
@@ -5370,10 +5326,6 @@ bool MyAvatar::getIsInSittingState() const {
     return _isInSittingState.get();
 }
 
-MyAvatar::SitStandModelType MyAvatar::getUserRecenterModel() const {
-    return _userRecenterModel.get();
-}
-
 MyAvatar::AllowAvatarStandingPreference MyAvatar::getAllowAvatarStandingPreference() const {
     return _allowAvatarStandingPreference.get();
 }
@@ -5446,48 +5398,13 @@ void MyAvatar::setIsInSittingState(bool isSitting) {
     setSitStandStateChange(true);
 }
 
-void MyAvatar::setUserRecenterModel(MyAvatar::SitStandModelType modelName) {
-
-    _userRecenterModel.set(modelName);
-
-    
-    switch (modelName) {
-        case MyAvatar::SitStandModelType::ForceSit:
-            setHMDLeanRecenterEnabled(true);
-            setHMDCrouchRecenterEnabled(true);
-            setIsInSittingState(true);
-            setIsSitStandStateLocked(true);
-            break;
-        case MyAvatar::SitStandModelType::ForceStand:
-            setHMDLeanRecenterEnabled(true);
-            setHMDCrouchRecenterEnabled(true);
-            setIsInSittingState(false);
-            setIsSitStandStateLocked(true);
-            break;
-        case MyAvatar::SitStandModelType::Auto:
-        default:
-            setHMDLeanRecenterEnabled(true);
-            setHMDCrouchRecenterEnabled(true);
-            setIsInSittingState(false);
-            setIsSitStandStateLocked(false);
-            break;
-        case MyAvatar::SitStandModelType::DisableHMDLean:
-            setHMDLeanRecenterEnabled(false);
-            setHMDCrouchRecenterEnabled(false);
-            setIsInSittingState(false);
-            setIsSitStandStateLocked(false);
-            break;
-    }
-    
-}
-
-// pp todo comment
+// Set the preference of when the avatar may stand.
 void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStandingPreference preference) {
     _allowAvatarStandingPreference.set(preference);
     setHMDCrouchRecenterEnabled(_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always);// pp todo: && !foottrackers
 }
 
-// pp todo comment
+// Set the preference of when the avatar may lean.
 void MyAvatar::setAllowAvatarLeaningPreference(const MyAvatar::AllowAvatarLeaningPreference preference) {
     _allowAvatarLeaningPreference.set(preference);
     setHMDLeanRecenterEnabled(preference != AllowAvatarLeaningPreference::Never);
@@ -5783,9 +5700,9 @@ bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar, co
         return true;
     }
 
-    static float PPF2_FOLLOW_ROTATION_THRESHOLD = cosf(myAvatar.getRotationThreshold());
+    static float FOLLOW_ROTATION_THRESHOLD = cosf(myAvatar.getRotationThreshold());
     glm::vec2 bodyFacing = getFacingDir2D(currentBodyMatrix);
-    return glm::dot(-myAvatar.getHeadControllerFacingMovingAverage(), bodyFacing) < PPF2_FOLLOW_ROTATION_THRESHOLD;
+    return glm::dot(-myAvatar.getHeadControllerFacingMovingAverage(), bodyFacing) < FOLLOW_ROTATION_THRESHOLD;
 }
 
 bool MyAvatar::FollowHelper::shouldActivateHorizontal(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix) const {
@@ -5867,7 +5784,6 @@ bool MyAvatar::FollowHelper::shouldActivateHorizontalCG(MyAvatar& myAvatar) cons
     }
     return stepDetected;
 }
-
 
 bool MyAvatar::FollowHelper::shouldActivateVertical(const MyAvatar& myAvatar,
                                                     const glm::mat4& desiredBodyMatrix,

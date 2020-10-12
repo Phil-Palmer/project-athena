@@ -685,10 +685,32 @@ void CharacterController::applyMotor(int index, btScalar dt, btVector3& worldVel
         return;
     }
 
+    const bool motorHasRotation = !(motor.rotation == btQuaternion::getIdentity());
+    btVector3 axis(btScalar(0), btScalar(0), btScalar(0));
+    btScalar angle(0);
+
+    auto rotateToWorldFrame = [&](const btVector3 vectorInMotorFrame)
+    {
+        if (motorHasRotation) {
+            return vectorInMotorFrame.rotate(axis, angle);
+        }
+        else {
+            return vectorInMotorFrame;
+        }
+    };
+
+    auto rotateToMotorFrame = [&](const btVector3 vectorInWorldFrame)
+    {
+        if (motorHasRotation) {
+            return vectorInWorldFrame.rotate(axis, -angle);
+        }
+        else {
+            return vectorInWorldFrame;
+        }
+    };
+
     // rotate into motor-frame
-    btVector3 axis = motor.rotation.getAxis();
-    btScalar angle = motor.rotation.getAngle();
-    btVector3 velocity = worldVelocity.rotate(axis, -angle);
+    btVector3 velocity = rotateToMotorFrame(worldVelocity);
 
     int32_t collisionMask = computeCollisionMask();
     if (collisionMask == BULLET_COLLISION_MASK_COLLISIONLESS ||
@@ -701,15 +723,15 @@ void CharacterController::applyMotor(int index, btScalar dt, btVector3& worldVel
         velocity += tau * (motor.velocity - velocity);
 
         // rotate back into world-frame
-        velocity = velocity.rotate(axis, angle);
-        _targetVelocity += (tau * motor.velocity).rotate(axis, angle);
+        velocity = rotateToWorldFrame(velocity);
+        _targetVelocity += rotateToWorldFrame(tau * motor.velocity);
 
         // store the velocity and weight
         velocities.push_back(velocity);
         weights.push_back(tau);
     } else {
         // compute local UP
-        btVector3 up = _currentUp.rotate(axis, -angle);
+        btVector3 up = rotateToMotorFrame(_currentUp);
         btVector3 motorVelocity = motor.velocity;
 
         // save these non-adjusted components for later
@@ -718,7 +740,7 @@ void CharacterController::applyMotor(int index, btScalar dt, btVector3& worldVel
 
         if (_stepHeight > _minStepHeight && !_steppingUp) {
             // there is a step --> compute velocity direction to go over step
-            btVector3 motorVelocityWF = motorVelocity.rotate(axis, angle);
+            btVector3 motorVelocityWF = rotateToWorldFrame(motorVelocity);
             if (motorVelocityWF.dot(_stepNormal) < 0.0f) {
                 // the motor pushes against step
                 _steppingUp = true;
@@ -753,8 +775,8 @@ void CharacterController::applyMotor(int index, btScalar dt, btVector3& worldVel
         }
 
         // add components back together and rotate into world-frame
-        velocity = (hVelocity + vVelocity).rotate(axis, angle);
-        _targetVelocity += maxTau * (hTargetVelocity + vTargetVelocity).rotate(axis, angle);
+        velocity = rotateToWorldFrame(hVelocity + vVelocity);
+        _targetVelocity += maxTau * rotateToWorldFrame(hTargetVelocity + vTargetVelocity);
 
         // store velocity and weights
         velocities.push_back(velocity);

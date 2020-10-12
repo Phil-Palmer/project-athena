@@ -2749,6 +2749,7 @@ void Rig::initFlow(bool isActive) {
     }
 }
 
+// Get the vertical position of eye joints, in the rig coordinate frame, ignoring the avatar scale.
 float Rig::getUnscaledEyeHeight() const {
     // Normally the model offset transform will contain the avatar scale factor, we explicitly remove it here.
     AnimPose modelOffsetWithoutAvatarScale(glm::vec3(1.0f), getModelOffsetPose().rot(), getModelOffsetPose().trans());
@@ -2798,7 +2799,8 @@ float Rig::getUnscaledEyeHeight() const {
     }
 }
 
-// pptest
+// Get the vertical position of the hips joint, in the rig coordinate frame, ignoring the avatar scale.
+// pp todo funcme some of this dup'd stuff from the function above?
 float Rig::getUnscaledHipsHeight() const {
     // Normally the model offset transform will contain the avatar scale factor, we explicitly remove it here.
     AnimPose modelOffsetWithoutAvatarScale(glm::vec3(1.0f), getModelOffsetPose().rot(), getModelOffsetPose().trans());
