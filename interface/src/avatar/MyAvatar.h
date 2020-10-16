@@ -2885,19 +2885,13 @@ private:
     struct FollowHelper {
         FollowHelper();
 
-        enum FollowType {
-            Rotation = 0,
-            Horizontal,
-            Vertical,
-            NumFollowTypes
-        };
-        float _timeRemaining[NumFollowTypes];
+        float _timeRemaining[CharacterController::FollowType::Count];
 
         void deactivate();
-        void deactivate(FollowType type);
-        void activate(FollowType type, const bool snapFollow);
+        void deactivate(CharacterController::FollowType type);
+        void activate(CharacterController::FollowType type, const bool snapFollow);
         bool isActive() const;
-        bool isActive(FollowType followType) const;
+        bool isActive(CharacterController::FollowType followType) const;
         float getMaxTimeRemaining() const;
         void decrementTimeRemaining(float dt);
         bool shouldActivateRotation(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix) const;
@@ -2923,7 +2917,7 @@ private:
 
     FollowHelper _follow;
 
-    bool isFollowActive(FollowHelper::FollowType followType) const;
+    bool isFollowActive(CharacterController::FollowType followType) const;
 
     bool _goToPending { false };
     bool _physicsSafetyPending { false };

@@ -114,7 +114,6 @@ CharacterController::CharacterController() {
 
     _targetVelocity.setValue(0.0f, 0.0f, 0.0f);
     _followDesiredBodyTransform.setIdentity();
-    _followTimeRemaining = 0.0f;
     _state = State::Hover;
     _isPushingUp = false;
     _rayHitStartTime = 0;
@@ -352,91 +351,111 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
     btVector3 velocity = _rigidBody->getLinearVelocity() - _parentVelocity;
     computeNewVelocity(dt, velocity);
 
-    const float MINIMUM_TIME_REMAINING = 0.005f;
-    const float MAX_DISPLACEMENT = 0.5f * _radius;
+    if (_followTimeRemainingPerType != nullptr)
+    {
 
-	if (_followTimeRemaining != FLT_MAX)
-	{
-		_followTimeRemaining -= dt;
-	}
+        const float MINIMUM_TIME_REMAINING = 0.005f;
+        const float MAX_DISPLACEMENT = 0.5f * _radius;
 
-    if (_followTimeRemaining >= MINIMUM_TIME_REMAINING) {
-        btTransform bodyTransform = _rigidBody->getWorldTransform();
+        /* pprono, decremented in myavatar by the followhelper
+	    if (_followTimeRemaining != FLT_MAX)
+	    {
+		    _followTimeRemaining -= dt;
+	    }
+        */
 
-        btVector3 startPos = bodyTransform.getOrigin();
-        btVector3 deltaPos = _followDesiredBodyTransform.getOrigin() - startPos;
-
-        btVector3 linearDisplacement;
-		if (_followTimeRemaining == FLT_MAX)
-		{
-			linearDisplacement = deltaPos;
-		}
-		else
-		{
-	        btVector3 vel = deltaPos / _followTimeRemaining;
-	        linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
-		}
-
-        btVector3 endPos = startPos + linearDisplacement;
-
-        // resolve the simple linearDisplacement
-        _followLinearDisplacement += linearDisplacement;
-
-        // now for the rotational part...
-        btQuaternion startRot = bodyTransform.getRotation();
-        btQuaternion desiredRot = _followDesiredBodyTransform.getRotation();
-
-        // startRot as default rotation
-        btQuaternion endRot = startRot;
-
-        // the dot product between two quaternions is equal to +/- cos(angle/2)
-        // where 'angle' is that of the rotation between them
-        float qDot = desiredRot.dot(startRot);
-
-        // when the abs() value of the dot product is approximately 1.0
-        // then the two rotations are effectively adjacent
-        const float MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS = 0.99999f; // corresponds to approx 0.5 degrees
-        if (fabsf(qDot) < MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS) {
-            if (qDot < 0.0f) {
-                // the quaternions are actually on opposite hyperhemispheres
-                // so we move one to agree with the other and negate qDot
-                desiredRot = -desiredRot;
-                qDot = -qDot;
-            }
-            btQuaternion deltaRot = desiredRot * startRot.inverse();
-
-            // the axis is the imaginary part, but scaled by sin(angle/2)
-            btVector3 axis(deltaRot.getX(), deltaRot.getY(), deltaRot.getZ());
-            axis /= sqrtf(1.0f - qDot * qDot);
-
-            // compute the angle we will resolve for this dt, but don't overshoot
-            float angle = 2.0f * acosf(qDot);
-
-			if (_followTimeRemaining != FLT_MAX)
-			{
-                if (dt < _followTimeRemaining) {
-                    angle *= dt / _followTimeRemaining;
-                }
-			}
-
-            // accumulate rotation
-            deltaRot = btQuaternion(axis, angle);
-            _followAngularDisplacement = (deltaRot * _followAngularDisplacement).normalize();
-
-            // in order to accumulate displacement of avatar position, we need to take _shapeLocalOffset into account.
-            btVector3 shapeLocalOffset = glmToBullet(_shapeLocalOffset);
-
-            endRot = deltaRot * startRot;
-            btVector3 swingDisplacement = rotateVector(endRot, -shapeLocalOffset) - rotateVector(startRot, -shapeLocalOffset);
-            _followLinearDisplacement += swingDisplacement;
+        // pp todo break-up below
+        float maxFollowTimeRemaining = _followTimeRemainingPerType[0];
+        for (int i = 1, e = static_cast<int>(FollowType::Count); i < e; ++i)
+        {
+            maxFollowTimeRemaining = glm::max(maxFollowTimeRemaining, _followTimeRemainingPerType[i]);
         }
-        _rigidBody->setWorldTransform(btTransform(endRot, endPos));
-    }
+        //
 
-	if (_followTimeRemaining == FLT_MAX)
-	{
-		_followTimeRemaining = 0.f;//pp
-	}
+        if (maxFollowTimeRemaining >= MINIMUM_TIME_REMAINING) {
+            btTransform bodyTransform = _rigidBody->getWorldTransform();
+
+            btVector3 startPos = bodyTransform.getOrigin();
+            btVector3 deltaPos = _followDesiredBodyTransform.getOrigin() - startPos;
+
+	        btVector3 vel = deltaPos / maxFollowTimeRemaining;
+	        btVector3 linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
+
+            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] == FLT_MAX)
+            {
+                linearDisplacement.setX(deltaPos.x());
+                linearDisplacement.setZ(deltaPos.z());
+            }
+
+            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] == FLT_MAX)
+            {
+                linearDisplacement.setY(deltaPos.y());
+            }
+
+            btVector3 endPos = startPos + linearDisplacement;
+
+            // resolve the simple linearDisplacement
+            _followLinearDisplacement += linearDisplacement;
+
+            // now for the rotational part...
+            btQuaternion startRot = bodyTransform.getRotation();
+            btQuaternion desiredRot = _followDesiredBodyTransform.getRotation();
+
+            // startRot as default rotation
+            btQuaternion endRot = startRot;
+
+            // the dot product between two quaternions is equal to +/- cos(angle/2)
+            // where 'angle' is that of the rotation between them
+            float qDot = desiredRot.dot(startRot);
+
+            // when the abs() value of the dot product is approximately 1.0
+            // then the two rotations are effectively adjacent
+            const float MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS = 0.99999f; // corresponds to approx 0.5 degrees
+            if (fabsf(qDot) < MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS) {
+                if (qDot < 0.0f) {
+                    // the quaternions are actually on opposite hyperhemispheres
+                    // so we move one to agree with the other and negate qDot
+                    desiredRot = -desiredRot;
+                    qDot = -qDot;
+                }
+                btQuaternion deltaRot = desiredRot * startRot.inverse();
+
+                // the axis is the imaginary part, but scaled by sin(angle/2)
+                btVector3 axis(deltaRot.getX(), deltaRot.getY(), deltaRot.getZ());
+                axis /= sqrtf(1.0f - qDot * qDot);
+
+                // compute the angle we will resolve for this dt, but don't overshoot
+                float angle = 2.0f * acosf(qDot);
+
+                const float rotationFollowTimeRemaining = _followTimeRemainingPerType[static_cast<uint>(FollowType::Rotation)];
+			    if (rotationFollowTimeRemaining != FLT_MAX)
+			    {
+                    if (dt < rotationFollowTimeRemaining) {
+                        angle *= dt / rotationFollowTimeRemaining;// pp todo ensure no db0
+                    }
+			    }
+
+                // accumulate rotation
+                deltaRot = btQuaternion(axis, angle);
+                _followAngularDisplacement = (deltaRot * _followAngularDisplacement).normalize();
+
+                // in order to accumulate displacement of avatar position, we need to take _shapeLocalOffset into account.
+                btVector3 shapeLocalOffset = glmToBullet(_shapeLocalOffset);
+
+                endRot = deltaRot * startRot;
+                btVector3 swingDisplacement = rotateVector(endRot, -shapeLocalOffset) - rotateVector(startRot, -shapeLocalOffset);
+                _followLinearDisplacement += swingDisplacement;
+            }
+            _rigidBody->setWorldTransform(btTransform(endRot, endPos));
+        }
+
+        /* pprono, 
+	    if (_followTimeRemaining == FLT_MAX)
+	    {
+		    _followTimeRemaining = 0.f;//pp
+	    }
+        */
+    }
 
     _followTime += dt;
 
@@ -633,8 +652,8 @@ void CharacterController::setParentVelocity(const glm::vec3& velocity) {
     _parentVelocity = glmToBullet(velocity);
 }
 
-void CharacterController::setFollowParameters(const glm::mat4& desiredWorldBodyMatrix, float timeRemaining) {
-    _followTimeRemaining = timeRemaining;
+void CharacterController::setFollowParameters(const glm::mat4& desiredWorldBodyMatrix, const float* const followTimeRemainingPerType) {
+    _followTimeRemainingPerType = followTimeRemainingPerType;
     _followDesiredBodyTransform = glmToBullet(desiredWorldBodyMatrix) * btTransform(btQuaternion::getIdentity(), glmToBullet(_shapeLocalOffset));
 }
 

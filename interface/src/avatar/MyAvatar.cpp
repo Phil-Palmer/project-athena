@@ -866,7 +866,7 @@ void MyAvatar::recalculateChildCauterization() const {
     _cauterizationNeedsUpdate = true;
 }
 
-bool MyAvatar::isFollowActive(FollowHelper::FollowType followType) const {
+bool MyAvatar::isFollowActive(CharacterController::FollowType followType) const {
     return _follow.isActive(followType);
 }
 
@@ -5646,40 +5646,41 @@ MyAvatar::FollowHelper::FollowHelper() {
 }
 
 void MyAvatar::FollowHelper::deactivate() {
-    for (int i = 0; i < NumFollowTypes; i++) {
-        deactivate((FollowType)i);
+    for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
+        deactivate((CharacterController::FollowType)i);
     }
 }
 
-void MyAvatar::FollowHelper::deactivate(FollowType type) {
-    assert(type >= 0 && type < NumFollowTypes);
+void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
+    assert(type >= 0 && type < CharacterController::FollowType::Count);
     _timeRemaining[(int)type] = 0.0f;
 }
 
 
 // pp todo comment snapFollow
-void MyAvatar::FollowHelper::activate(FollowType type, const bool snapFollow) {
-    assert(type >= 0 && type < NumFollowTypes);
+void MyAvatar::FollowHelper::activate(CharacterController::FollowType type, const bool snapFollow) {
+    assert(type >= 0 && type < CharacterController::FollowType::Count);
     // TODO: Perhaps, the follow time should be proportional to the displacement.
     _timeRemaining[(int)type] = snapFollow ? FLT_MAX : FOLLOW_TIME;
 }
-bool MyAvatar::FollowHelper::isActive(FollowType type) const {
-    assert(type >= 0 && type < NumFollowTypes);
+bool MyAvatar::FollowHelper::isActive(CharacterController::FollowType type) const {
+    assert(type >= 0 && type < CharacterController::FollowType::Count);
     return _timeRemaining[(int)type] > 0.0f;
 }
 
 bool MyAvatar::FollowHelper::isActive() const {
-    for (int i = 0; i < NumFollowTypes; i++) {
-        if (isActive((FollowType)i)) {
+    for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
+        if (isActive((CharacterController::FollowType)i)) {
             return true;
         }
     }
     return false;
 }
 
+// pp todo remove?
 float MyAvatar::FollowHelper::getMaxTimeRemaining() const {
     float max = 0.0f;
-    for (int i = 0; i < NumFollowTypes; i++) {
+    for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
         if (_timeRemaining[i] > max) {
             max = _timeRemaining[i];
         }
@@ -5688,7 +5689,7 @@ float MyAvatar::FollowHelper::getMaxTimeRemaining() const {
 }
 
 void MyAvatar::FollowHelper::decrementTimeRemaining(float dt) {
-    for (int i = 0; i < NumFollowTypes; i++) {
+    for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
         _timeRemaining[i] -= dt;
     }
 }
@@ -5771,8 +5772,8 @@ bool MyAvatar::FollowHelper::shouldActivateHorizontalCG(MyAvatar& myAvatar) cons
             glm::vec3 defaultHeadPosition = myAvatar.getAbsoluteDefaultJointTranslationInObjectFrame(myAvatar.getJointIndex("Head"));
             glm::vec3 currentHeadPosition = currentHeadPose.getTranslation();
             float anatomicalHeadToHipsDistance = glm::length(defaultHeadPosition - defaultHipsPosition);
-            if (!isActive(Horizontal) &&
-                (!isActive(Vertical)) &&
+            if (!isActive(CharacterController::FollowType::Horizontal) &&
+                (!isActive(CharacterController::FollowType::Vertical)) &&
                 (glm::length(currentHeadPosition - defaultHipsPosition) > (anatomicalHeadToHipsDistance + (DEFAULT_AVATAR_SPINE_STRETCH_LIMIT * anatomicalHeadToHipsDistance)))) {
                 myAvatar.setResetMode(true);
                 stepDetected = true;
@@ -5824,53 +5825,53 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
                                                   bool hasDriveInput) {
 
     if (myAvatar.getHMDLeanRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
-        if (!isActive(Rotation) && (shouldActivateRotation(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-            activate(Rotation, false);
+        if (!isActive(CharacterController::FollowType::Rotation) && (shouldActivateRotation(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
+            activate(CharacterController::FollowType::Rotation, false);
             myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
         }
         if (myAvatar.getCenterOfGravityModelEnabled()) {
-            if (!isActive(Horizontal) && (shouldActivateHorizontalCG(myAvatar) || hasDriveInput)) {
-                activate(Horizontal, false);
+            if (!isActive(CharacterController::FollowType::Horizontal) && (shouldActivateHorizontalCG(myAvatar) || hasDriveInput)) {
+                activate(CharacterController::FollowType::Horizontal, false);
                 if (myAvatar.getEnableStepResetRotation()) {
-                    activate(Rotation, false);
+                    activate(CharacterController::FollowType::Rotation, false);
                     myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
                 }
             }
         } else {
             // center of gravity model is not enabled
-            if (!isActive(Horizontal) &&
+            if (!isActive(CharacterController::FollowType::Horizontal) &&
                 (shouldActivateHorizontal(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-                activate(Horizontal, false);
+                activate(CharacterController::FollowType::Horizontal, false);
                 if (myAvatar.getEnableStepResetRotation() && !myAvatar.getIsInSittingState()) {
-                    activate(Rotation, false);
+                    activate(CharacterController::FollowType::Rotation, false);
                     myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
                 }
             }
         }
     } else {
-        if (pptest_forcerotation || (!isActive(Rotation) && getForceActivateRotation())) {
-            activate(Rotation, pptest_snapfollow);
+        if (pptest_forcerotation || (!isActive(CharacterController::FollowType::Rotation) && getForceActivateRotation())) {
+            activate(CharacterController::FollowType::Rotation, pptest_snapfollow);
             myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
             setForceActivateRotation(false);
         }
 
-        if (pptest_forcehorizontal || (!isActive(Horizontal) && getForceActivateHorizontal())) {
-            activate(Horizontal, pptest_snapfollow);
+        if (pptest_forcehorizontal || (!isActive(CharacterController::FollowType::Horizontal) && getForceActivateHorizontal())) {
+            activate(CharacterController::FollowType::Horizontal, pptest_snapfollow);
             setForceActivateHorizontal(false);
         }
     }
 
     if (myAvatar.getHMDCrouchRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
-        if (!isActive(Vertical) &&
+        if (!isActive(CharacterController::FollowType::Vertical) &&
             (shouldActivateVertical(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-            activate(Vertical, false);
+            activate(CharacterController::FollowType::Vertical, false);
             if (_squatDetected) {
                 _squatDetected = false;
             }
         }
     } else if (pptest_allowvertical) {
-        if (!isActive(Vertical) && getForceActivateVertical()) {
-            activate(Vertical, pptest_snapfollow);
+        if (!isActive(CharacterController::FollowType::Vertical) && getForceActivateVertical()) {
+            activate(CharacterController::FollowType::Vertical, pptest_snapfollow);
             setForceActivateVertical(false);
         }
     }
@@ -5890,21 +5891,21 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
     // remove scale present from sensorToWorldMatrix
     followWorldPose.scale() = glm::vec3(1.0f);
 
-    if (isActive(Rotation)) {
+    if (isActive(CharacterController::FollowType::Rotation)) {
         //use the hmd reading for the hips follow
         followWorldPose.rot() = glmExtractRotation(desiredWorldMatrix);
     }
-    if (isActive(Horizontal)) {
+    if (isActive(CharacterController::FollowType::Horizontal)) {
         glm::vec3 desiredTranslation = extractTranslation(desiredWorldMatrix);
         followWorldPose.trans().x = desiredTranslation.x;
         followWorldPose.trans().z = desiredTranslation.z;
     }
-    if (isActive(Vertical)) {
+    if (isActive(CharacterController::FollowType::Vertical)) {
         glm::vec3 desiredTranslation = extractTranslation(desiredWorldMatrix);
         followWorldPose.trans().y = desiredTranslation.y;
     }
 
-    myAvatar.getCharacterController()->setFollowParameters(followWorldPose, getMaxTimeRemaining());
+    myAvatar.getCharacterController()->setFollowParameters(followWorldPose, _timeRemaining);
 }
 
 glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix) {
@@ -5930,7 +5931,7 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
         if (myAvatar.getHMDCrouchRecenterEnabled()) {
             if (myAvatar.getSitStandStateChange()) {
                 myAvatar.setSitStandStateChange(false);
-                deactivate(Vertical);
+                deactivate(CharacterController::FollowType::Vertical);
                 setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(false)));
             }
         } else if (pptest_forcesetbodytrans2) {
@@ -6305,7 +6306,7 @@ void MyAvatar::updateHoldActions(const AnimPose& prePhysicsPose, const AnimPose&
 }
 
 bool MyAvatar::isRecenteringHorizontally() const {
-    return _follow.isActive(FollowHelper::Horizontal);
+    return _follow.isActive(CharacterController::FollowType::Horizontal);
 }
 
 const MyHead* MyAvatar::getMyHead() const {
