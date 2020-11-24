@@ -10,7 +10,7 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#pragma optimize("", off)  // PP  test comment 2
+#pragma optimize("", off)  // PP
 
 #include "MyAvatar.h"
 
@@ -127,6 +127,18 @@ static bool pptest_forceactive = true;
 static bool pptest_allowvertical = false;// used when not crouch recentre
 static bool pptest_deriveBodyFromHMDSensor_donew = true;
 static bool pptest_snapfollow = true;
+
+
+//pptest, was false
+static bool pptest_crouch1 = false;
+static bool pptest_crouch2 = false;
+static bool pptest_crouch3 = false;
+static bool pptest_crouch4 = false;
+static bool pptest_crouch5 = false;
+static bool pptest_crouch6 = false;
+static bool pptest_crouch7 = false;
+static bool pptest_crouch8 = false;
+static bool pptest_crouch9 = false;
 
 const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
     QStringLiteral("WhenUserIsStanding"),
@@ -301,7 +313,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     // when we leave a domain we lift whatever restrictions that domain may have placed on our scale
     connect(&domainHandler, &DomainHandler::disconnectedFromDomain, this, &MyAvatar::leaveDomain);
 
-    _bodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled());
+    _bodySensorMatrix = deriveBodyFromHMDSensor(!(getHMDCrouchRecenterEnabled()||pptest_crouch1));
 
     using namespace recording;
 
@@ -527,7 +539,7 @@ void MyAvatar::centerBody() {
     }
 
     // derive the desired body orientation from the current hmd orientation, before the sensor reset.
-    auto newBodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()); // Based on current cached HMD position/rotation..
+    auto newBodySensorMatrix = deriveBodyFromHMDSensor(!(getHMDCrouchRecenterEnabled()||pptest_crouch2)); // Based on current cached HMD position/rotation..
 
     // transform this body into world space
     auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
@@ -580,7 +592,7 @@ void MyAvatar::reset(bool andRecenter, bool andReload, bool andHead) {
 
     if (andRecenter) {
         // derive the desired body orientation from the *old* hmd orientation, before the sensor reset.
-        auto newBodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()); // Based on current cached HMD position/rotation..
+        auto newBodySensorMatrix = deriveBodyFromHMDSensor(!(getHMDCrouchRecenterEnabled()||pptest_crouch3)); // Based on current cached HMD position/rotation..
 
         // transform this body into world space
         auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
@@ -596,7 +608,7 @@ void MyAvatar::reset(bool andRecenter, bool andReload, bool andHead) {
         updateFromHMDSensorMatrix(identity);
 
         // update the body in sensor space using the new hmd sensor sample
-        _bodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled());
+        _bodySensorMatrix = deriveBodyFromHMDSensor(!(getHMDCrouchRecenterEnabled()||pptest_crouch4));
 
         // rebuild the sensor to world matrix such that, the HMD will point in the desired orientation.
         // i.e. the along avatar's current position and orientation.
@@ -725,7 +737,7 @@ void MyAvatar::update(float deltaTime) {
     }
     float angleSpine2 = glm::dot(upSpine2, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    if (getHMDCrouchRecenterEnabled() &&
+    if ((getHMDCrouchRecenterEnabled()||pptest_crouch5) &&
         (angleSpine2 > COSINE_THIRTY_DEGREES) &&// if the spine is within +/-30° of vertical
         getControllerPoseInAvatarFrame(controller::Action::HEAD).getTranslation().y < (headDefaultPositionAvatarSpace.y - SQUAT_THRESHOLD)
         ) {
@@ -2775,7 +2787,7 @@ void MyAvatar::prepareForPhysicsSimulation() {
     _characterController.setPositionAndOrientation(getWorldPosition(), getWorldOrientation());
     auto headPose = getControllerPoseInAvatarFrame(controller::Action::HEAD);
     if (headPose.isValid()) {
-        _follow.prePhysicsUpdate(*this, deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()), _bodySensorMatrix, hasDriveInput());
+        _follow.prePhysicsUpdate(*this, deriveBodyFromHMDSensor(!(getHMDCrouchRecenterEnabled()||pptest_crouch6)), _bodySensorMatrix, hasDriveInput());
     } else {
         _follow.deactivate();
     }
@@ -3159,7 +3171,7 @@ void MyAvatar::destroyAnimGraph() {
 }
 
 void MyAvatar::animGraphLoaded() {
-    _bodySensorMatrix = deriveBodyFromHMDSensor(!getHMDCrouchRecenterEnabled()); // Based on current cached HMD position/rotation..
+    _bodySensorMatrix = deriveBodyFromHMDSensor(!(getHMDCrouchRecenterEnabled()||pptest_crouch7)); // Based on current cached HMD position/rotation..
     updateSensorToWorldMatrix(); // Uses updated position/orientation and _bodySensorMatrix changes
     _isAnimatingScale = true;
     _cauterizationNeedsUpdate = true;
@@ -5861,7 +5873,7 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
         }
     }
 
-    if (myAvatar.getHMDCrouchRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
+    if ((myAvatar.getHMDCrouchRecenterEnabled()||pptest_crouch8) && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
         if (!isActive(CharacterController::FollowType::Vertical) &&
             (shouldActivateVertical(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
             activate(CharacterController::FollowType::Vertical, false);
@@ -5928,14 +5940,28 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
         glm::mat4 newBodyMat = createMatFromQuatAndPos(sensorAngularDisplacement * glmExtractRotation(currentBodyMatrix),
                                                        sensorLinearDisplacement + extractTranslation(currentBodyMatrix));
 
-        if (myAvatar.getHMDCrouchRecenterEnabled()) {
+        static bool pptest_ifnocrouchrecentre_nosettrans = false;//pptest was false
+        static bool pptest_verticalonly = true;
+
+        if (myAvatar.getHMDCrouchRecenterEnabled()||pptest_crouch9) {
             if (myAvatar.getSitStandStateChange()) {
                 myAvatar.setSitStandStateChange(false);
                 deactivate(CharacterController::FollowType::Vertical);
                 setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(false)));
             }
         } else if (pptest_forcesetbodytrans2) {
-            setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(true)));
+            if (!pptest_ifnocrouchrecentre_nosettrans)
+            {
+                if (pptest_verticalonly)// the winning ticket?
+                {
+                    glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor(true);
+                    newBodyMat[3][1] = derivedBodyMat[3][1];
+                }
+                else
+                {
+                    setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(true)));
+                }
+            }
         }
 
         return newBodyMat;
