@@ -152,7 +152,7 @@ public:
 
     void setPendingFlagsUpdateCollisionMask(){ _pendingFlags |= PENDING_FLAG_UPDATE_COLLISION_MASK; }
     void setSeated(bool isSeated) { _isSeated = isSeated;  }
-    bool getSeated() { return _isSeated; }
+    bool getSeated() const { return _isSeated; }
 
     void resetStuckCounter() { _numStuckSubsteps = 0; }
 

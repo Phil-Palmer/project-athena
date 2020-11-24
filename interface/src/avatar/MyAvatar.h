@@ -388,7 +388,7 @@ class MyAvatar : public Avatar {
 
     Q_PROPERTY(bool centerOfGravityModelEnabled READ getCenterOfGravityModelEnabled WRITE setCenterOfGravityModelEnabled)
     Q_PROPERTY(bool hmdLeanRecenterEnabled READ getHMDLeanRecenterEnabled WRITE setHMDLeanRecenterEnabled)
-    Q_PROPERTY(bool hmdCrouchRecenterEnabled READ getHMDCrouchRecenterEnabled WRITE setHMDCrouchRecenterEnabled)
+    //pprono Q_PROPERTY(bool hmdCrouchRecenterEnabled READ getHMDCrouchRecenterEnabled WRITE setHMDCrouchRecenterEnabled)
     Q_PROPERTY(bool collisionsEnabled READ getCollisionsEnabled WRITE setCollisionsEnabled)
     Q_PROPERTY(bool otherAvatarsCollisionsEnabled READ getOtherAvatarsCollisionsEnabled WRITE setOtherAvatarsCollisionsEnabled)
     Q_PROPERTY(bool characterControllerEnabled READ getCharacterControllerEnabled WRITE setCharacterControllerEnabled)
@@ -1005,21 +1005,6 @@ public:
      * @returns {boolean} <code>true</code> if recentering is enabled, <code>false</code> if not.
      */
     Q_INVOKABLE bool getHMDLeanRecenterEnabled() const { return _hmdLeanRecenterEnabled; }
-
-    /**jsdoc
-     * pp todo comment
-     * @function MyAvatar.setHMDLeanRecenterEnabled
-     * @param {boolean} enabled - <code>true</code> to recenter the avatar under the head as it moves, <code>false</code> to 
-     *     disable recentering.
-     */
-    Q_INVOKABLE void setHMDCrouchRecenterEnabled(bool value) { _hmdCrouchRecenterEnabled = value; }
-
-    /**jsdoc
-     * pp todo comment
-     * @function MyAvatar.getHMDLeanRecenterEnabled
-     * @returns {boolean} <code>true</code> if recentering is enabled, <code>false</code> if not.
-     */
-    Q_INVOKABLE bool getHMDCrouchRecenterEnabled() const { return _hmdCrouchRecenterEnabled; }
 
     /**jsdoc
      * Requests that the hand touch effect is disabled for your avatar. Any resulting change in the status of the hand touch 
@@ -2033,6 +2018,7 @@ public:
     glm::vec3 getLookAtPivotPoint();
     glm::vec3 getCameraEyesPosition(float deltaTime);
     bool isJumping();
+    bool getHMDCrouchRecenterEnabled() const;
 
 public slots:
 

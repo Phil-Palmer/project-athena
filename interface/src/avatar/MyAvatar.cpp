@@ -5334,6 +5334,7 @@ bool MyAvatar::getIsInWalkingState() const {
     return _isInWalkingState;
 }
 
+// Determine if the user is sitting
 bool MyAvatar::getIsInSittingState() const {
     return _isInSittingState.get();
 }
@@ -5400,6 +5401,7 @@ void MyAvatar::setIsInWalkingState(bool isWalking) {
     _isInWalkingState = isWalking;
 }
 
+// Specify whether the user is sitting or standing
 void MyAvatar::setIsInSittingState(bool isSitting) {
     _sitStandStateTimer = 0.0f;
     _squatTimer = 0.0f;
@@ -5413,7 +5415,7 @@ void MyAvatar::setIsInSittingState(bool isSitting) {
 // Set the preference of when the avatar may stand.
 void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStandingPreference preference) {
     _allowAvatarStandingPreference.set(preference);
-    setHMDCrouchRecenterEnabled(_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always);// pp todo: && !foottrackers
+    //pprono setHMDCrouchRecenterEnabled(_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always);// pp todo: && !foottrackers
 }
 
 // Set the preference of when the avatar may lean.
@@ -6786,7 +6788,7 @@ void MyAvatar::beginSit(const glm::vec3& position, const glm::quat& rotation) {
         _characterController.setSeated(true);
         setCollisionsEnabled(false);
         setHMDLeanRecenterEnabled(false);
-        setHMDCrouchRecenterEnabled(false);
+        //pprono setHMDCrouchRecenterEnabled(false);
         // Disable movement
         setSitDriveKeysStatus(false);
         centerBody();
@@ -6807,7 +6809,7 @@ void MyAvatar::endSit(const glm::vec3& position, const glm::quat& rotation) {
         _characterController.setSeated(false);
         setCollisionsEnabled(true);
         setHMDLeanRecenterEnabled(true);
-        setHMDCrouchRecenterEnabled(true);
+        //pprono setHMDCrouchRecenterEnabled(true);
         centerBody();
         slamPosition(position);
         setWorldOrientation(rotation);
@@ -7111,6 +7113,18 @@ glm::vec3 MyAvatar::getCameraEyesPosition(float deltaTime) {
 bool MyAvatar::isJumping() {
     return (_characterController.getState() == CharacterController::State::InAir ||
             _characterController.getState() == CharacterController::State::Takeoff) && !isFlying();
+}
+
+
+// pp todo comment
+bool MyAvatar::getHMDCrouchRecenterEnabled() const {
+    // pp todo tidy6
+    bool footTrackers = getControllerPoseInAvatarFrame(controller::Action::LEFT_FOOT).isValid();
+
+    return (!_characterController.getSeated() &&
+            (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !footTrackers);
+
+    //pprono return _hmdCrouchRecenterEnabled;
 }
 
 bool MyAvatar::setPointAt(const glm::vec3& pointAtTarget) {
