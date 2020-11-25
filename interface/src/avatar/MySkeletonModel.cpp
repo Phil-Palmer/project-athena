@@ -66,11 +66,9 @@ static AnimPose computeHipsInSensorFrame(MyAvatar* myAvatar, bool isFlying) {
         return result;
     }
 
-    static bool pptest_allowCOGmodelchange = false;// was false
-
     const bool useCenterOfGravityModel = !isFlying && myAvatar->getCenterOfGravityModelEnabled() && 
                                          !myAvatar->getIsInWalkingState() && !myAvatar->getIsInSittingState() && myAvatar->getHMDLeanRecenterEnabled() &&
-                                         (pptest_allowCOGmodelchange || myAvatar->getHMDCrouchRecenterEnabled());// pp todo comment?: without this check, we'd see the pop from one hip-placement method to another after crouching for SITTING_TIMEOUT (in mode 'stand when I`m standing').
+                                         myAvatar->getHMDCrouchRecenterEnabled();// pp todo comment?: without this check, we'd see the pop from one hip-placement method to another after crouching for SITTING_TIMEOUT (in mode 'stand when I`m standing').
 
     glm::mat4 hipsMat;
     if (useCenterOfGravityModel) {
