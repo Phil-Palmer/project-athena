@@ -120,7 +120,7 @@ const float POINT_ALPHA_BLENDING = 1.0f;
 
 
 
-static bool pptest_forcerotation = true;// used when not lean recentre
+static bool pptest_forcerotation = false;//true;// used when not lean recentre
 static bool pptest_forcehorizontal = true;// used when not lean recentre
 static bool pptest_forcesetbodytrans2 = true;// used when not crouch recentre
 static bool pptest_forceactive = true;
@@ -5696,11 +5696,19 @@ void MyAvatar::FollowHelper::decrementTimeRemaining(float dt) {
     }
 }
 
-bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix) const {
+bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix, bool& shouldSnapOut) const {
 
-    if (pptest_forcerotation)
+    shouldSnapOut = false;
+
+    static bool pptest_forceifhiptracking = true;
+    bool hipTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
+    if (hipTracker)
     {
-        return true;
+        if (pptest_forceifhiptracking)
+        {
+            shouldSnapOut=true;
+            return true;
+        }
     }
 
     static float FOLLOW_ROTATION_THRESHOLD = cosf(myAvatar.getRotationThreshold());
@@ -5826,11 +5834,21 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
                                                   const glm::mat4& currentBodyMatrix,
                                                   bool hasDriveInput) {
 
-    if (myAvatar.getHMDLeanRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
-        if (!isActive(CharacterController::FollowType::Rotation) && (shouldActivateRotation(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-            activate(CharacterController::FollowType::Rotation, false);
+	// pp mov, was previously only if leanenable
+    {
+        bool snapFollow = false;
+        if (!isActive(CharacterController::FollowType::Rotation) &&
+            (shouldActivateRotation(myAvatar, desiredBodyMatrix, currentBodyMatrix, snapFollow) || hasDriveInput)) {
+            activate(CharacterController::FollowType::Rotation, snapFollow);
             myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
         }
+    }
+
+    if (myAvatar.getHMDLeanRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
+      /*ppromov  if (!isActive(CharacterController::FollowType::Rotation) && (shouldActivateRotation(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
+            activate(CharacterController::FollowType::Rotation, false);
+            myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
+        }*/
         if (myAvatar.getCenterOfGravityModelEnabled()) {
             if (!isActive(CharacterController::FollowType::Horizontal) && (shouldActivateHorizontalCG(myAvatar) || hasDriveInput)) {
                 activate(CharacterController::FollowType::Horizontal, false);
@@ -5851,11 +5869,11 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
             }
         }
     } else {
-        if (pptest_forcerotation || (!isActive(CharacterController::FollowType::Rotation) && getForceActivateRotation())) {
+        /*ppro if (!isActive(CharacterController::FollowType::Rotation) && getForceActivateRotation()) {
             activate(CharacterController::FollowType::Rotation, pptest_snapfollow);
             myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
             setForceActivateRotation(false);
-        }
+        }*/
 
         if (pptest_forcehorizontal || (!isActive(CharacterController::FollowType::Horizontal) && getForceActivateHorizontal())) {
             activate(CharacterController::FollowType::Horizontal, pptest_snapfollow);
