@@ -448,13 +448,6 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
             }
             _rigidBody->setWorldTransform(btTransform(endRot, endPos));
         }
-
-        /* pprono, 
-	    if (_followTimeRemaining == FLT_MAX)
-	    {
-		    _followTimeRemaining = 0.f;//pp
-	    }
-        */
     }
 
     _followTime += dt;

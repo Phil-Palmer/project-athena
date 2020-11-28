@@ -5833,8 +5833,6 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
                                                   const glm::mat4& desiredBodyMatrix,
                                                   const glm::mat4& currentBodyMatrix,
                                                   bool hasDriveInput) {
-
-	// pp mov, was previously only if leanenable
     {
         bool snapFollow = false;
         if (!isActive(CharacterController::FollowType::Rotation) &&
@@ -5845,10 +5843,6 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
     }
 
     if (myAvatar.getHMDLeanRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
-      /*ppromov  if (!isActive(CharacterController::FollowType::Rotation) && (shouldActivateRotation(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-            activate(CharacterController::FollowType::Rotation, false);
-            myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
-        }*/
         if (myAvatar.getCenterOfGravityModelEnabled()) {
             if (!isActive(CharacterController::FollowType::Horizontal) && (shouldActivateHorizontalCG(myAvatar) || hasDriveInput)) {
                 activate(CharacterController::FollowType::Horizontal, false);
@@ -5869,12 +5863,6 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
             }
         }
     } else {
-        /*ppro if (!isActive(CharacterController::FollowType::Rotation) && getForceActivateRotation()) {
-            activate(CharacterController::FollowType::Rotation, pptest_snapfollow);
-            myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
-            setForceActivateRotation(false);
-        }*/
-
         if (pptest_forcehorizontal || (!isActive(CharacterController::FollowType::Horizontal) && getForceActivateHorizontal())) {
             activate(CharacterController::FollowType::Horizontal, pptest_snapfollow);
             setForceActivateHorizontal(false);
