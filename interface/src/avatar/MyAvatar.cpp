@@ -114,10 +114,9 @@ const float POINT_ALPHA_BLENDING = 1.0f;
 
 
 static bool pptest_forcerotation = false;//true;// used when not lean recentre
-static bool pptest_forcehorizontal = true;// used when not lean recentre
+static bool pptest_forcehorizontal = false;//true;// used when not lean recentre
 static bool pptest_forceactive = true;
 static bool pptest_deriveBodyFromHMDSensor_donew = true;
-static bool pptest_snapfollowhorizontal = true;
 
 
 const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
@@ -239,8 +238,8 @@ MyAvatar::MyAvatar(QThread* thread) :
     _allowAvatarStandingPreferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "allowAvatarStandingPreference",
         allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Default)]),
     _allowAvatarLeaningPreferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "allowAvatarLeaningPreference",
-        allowAvatarLeaningPreferenceStrings[static_cast<uint>(AllowAvatarLeaningPreference::Default)])
-{
+        allowAvatarLeaningPreferenceStrings[static_cast<uint>(AllowAvatarLeaningPreference::Default)]),
+    _disableLeanRecenterSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "disableLeanRecenter", false) {
     _clientTraitsHandler.reset(new ClientTraitsHandler(this));
 
     // give the pointer to our head to inherited _headData variable from AvatarData
@@ -596,6 +595,7 @@ void MyAvatar::reset(bool andRecenter, bool andReload, bool andHead) {
     }
 }
 
+// Determine if the user is sitting or standing in the real world.
 void MyAvatar::updateSitStandState(float newHeightReading, float dt) {
     const float STANDING_HEIGHT_MULTIPLE = 1.2f;
     const float SITTING_HEIGHT_MULTIPLE = 0.833f;
@@ -1303,6 +1303,7 @@ void MyAvatar::saveData() {
     _dominantHandSetting.set(getDominantHand());
     _allowAvatarStandingPreferenceSetting.set(allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
     _allowAvatarLeaningPreferenceSetting.set(allowAvatarLeaningPreferenceStrings[static_cast<uint>(getAllowAvatarLeaningPreference())]);
+    _disableLeanRecenterSetting.set(getDisableLeanRecenter());
     _strafeEnabledSetting.set(getStrafeEnabled());
     _hmdAvatarAlignmentTypeSetting.set(getHmdAvatarAlignmentType());
     _headPitchSetting.set(getHead()->getBasePitch());
@@ -1339,6 +1340,7 @@ void MyAvatar::saveData() {
     _controlSchemeIndexSetting.set(getControlSchemeIndex());
     _allowAvatarStandingPreferenceSetting.set(allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
     _allowAvatarLeaningPreferenceSetting.set(allowAvatarLeaningPreferenceStrings[static_cast<uint>(getAllowAvatarLeaningPreference())]);
+    _disableLeanRecenterSetting.set(getDisableLeanRecenter());
 
     auto hmdInterface = DependencyManager::get<HMDScriptingInterface>();
     saveAvatarEntityDataToSettings();
@@ -2035,6 +2037,7 @@ void MyAvatar::loadData() {
         allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Default)])));
     setAllowAvatarLeaningPreference(stringToAllowAvatarLeaningPreference(_allowAvatarLeaningPreferenceSetting.get(
         allowAvatarLeaningPreferenceStrings[static_cast<uint>(AllowAvatarLeaningPreference::Default)])));
+    setDisableLeanRecenter(_disableLeanRecenterSetting.get(false));
 
     setEnableMeshVisible(Menu::getInstance()->isOptionChecked(MenuOption::MeshVisible));
     _follow.setToggleHipsFollowing (Menu::getInstance()->isOptionChecked(MenuOption::ToggleHipsFollowing));
@@ -5278,6 +5281,10 @@ MyAvatar::AllowAvatarLeaningPreference MyAvatar::getAllowAvatarLeaningPreference
     return _allowAvatarLeaningPreference.get();
 }
 
+bool MyAvatar::getDisableLeanRecenter() const {
+    return _disableLeanRecenter.get();
+}
+
 bool MyAvatar::getIsSitStandStateLocked() const {
     return _lockSitStandState.get();
 }
@@ -5352,7 +5359,13 @@ void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStand
 // Set the preference of when the avatar may lean.
 void MyAvatar::setAllowAvatarLeaningPreference(const MyAvatar::AllowAvatarLeaningPreference preference) {
     _allowAvatarLeaningPreference.set(preference);
-    setHMDLeanRecenterEnabled(preference != AllowAvatarLeaningPreference::Never);
+    //pprono 28.11.20 setHMDLeanRecenterEnabled(preference != AllowAvatarLeaningPreference::Never);
+}
+
+// Set the preference of whether to disable recentring of the avatar's feet when the avatar leans.
+void MyAvatar::setDisableLeanRecenter(const bool disableLeanRecenter) {
+    _disableLeanRecenter.set(disableLeanRecenter);
+    setHMDLeanRecenterEnabled(!disableLeanRecenter);
 }
 
 // pp todo remove
@@ -5494,11 +5507,13 @@ float MyAvatar::getAnalogPlusSprintSpeed() const {
     return _analogPlusSprintSpeed.get();
 }
 
+// Indicate whether the user's real-world sit/stand state has changed or not.
 void MyAvatar::setSitStandStateChange(bool stateChanged) {
     _sitStandStateChange = stateChanged;
 }
 
-float MyAvatar::getSitStandStateChange() const {
+// Determine if the user's real-world sit/stand state has changed.
+bool MyAvatar::getSitStandStateChange() const {
     return _sitStandStateChange;
 }
 
@@ -5782,30 +5797,33 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
         }
     }
 
-    if (myAvatar.getHMDLeanRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
-        if (myAvatar.getCenterOfGravityModelEnabled()) {
-            if (!isActive(CharacterController::FollowType::Horizontal) && (shouldActivateHorizontalCG(myAvatar) || hasDriveInput)) {
-                activate(CharacterController::FollowType::Horizontal, false);
-                if (myAvatar.getEnableStepResetRotation()) {
-                    activate(CharacterController::FollowType::Rotation, false);
-                    myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
+    const bool hipsTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
+
+    if ((hipsTracker || getForceActivateHorizontal()) && !isActive(CharacterController::FollowType::Horizontal)) {
+        activate(CharacterController::FollowType::Horizontal, hipsTracker);
+        setForceActivateHorizontal(false);
+    }
+    else
+    {
+        if (myAvatar.getHMDLeanRecenterEnabled() && qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
+            if (myAvatar.getCenterOfGravityModelEnabled()) {
+                if (!isActive(CharacterController::FollowType::Horizontal) && (shouldActivateHorizontalCG(myAvatar) || hasDriveInput)) {
+                    activate(CharacterController::FollowType::Horizontal, false);
+                    if (myAvatar.getEnableStepResetRotation()) {
+                        activate(CharacterController::FollowType::Rotation, false);
+                        myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
+                    }
                 }
-            }
-        } else {
-            // center of gravity model is not enabled
-            if (!isActive(CharacterController::FollowType::Horizontal) &&
-                (shouldActivateHorizontal(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
-                activate(CharacterController::FollowType::Horizontal, false);
-                if (myAvatar.getEnableStepResetRotation() && !myAvatar.getIsInSittingState()) {
-                    activate(CharacterController::FollowType::Rotation, false);
-                    myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
+            } else {
+                // center of gravity model is not enabled
+                if (!isActive(CharacterController::FollowType::Horizontal) &&
+                    (shouldActivateHorizontal(myAvatar, desiredBodyMatrix, currentBodyMatrix) || hasDriveInput)) {
+                    activate(CharacterController::FollowType::Horizontal, false);
+                    if (myAvatar.getEnableStepResetRotation() && !myAvatar.getIsInSittingState()) {
+                        activate(CharacterController::FollowType::Rotation, false);
+                        myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
+                    }
                 }
-            }
-        }
-    } else {
-        if (pptest_forcehorizontal || (!isActive(CharacterController::FollowType::Horizontal) && getForceActivateHorizontal())) {
-            activate(CharacterController::FollowType::Horizontal, pptest_snapfollowhorizontal);
-            setForceActivateHorizontal(false);
         }
     }
 

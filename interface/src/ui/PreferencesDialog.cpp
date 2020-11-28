@@ -455,7 +455,13 @@ void setupPreferences() {
         preference->setItems(items);
         preferences->addPreference(preference);
     }
- 
+    {
+        auto getter = [myAvatar]() -> bool { return myAvatar->getDisableLeanRecenter(); };
+        auto setter = [myAvatar](bool value) { myAvatar->setDisableLeanRecenter(value); };
+        auto preference = new CheckPreference(VR_MOVEMENT, "Disable lean recentering (Experimental)", getter, setter);
+        preferences->addPreference(preference);
+    }
+
     {
         auto getter = [=]()->float { return myAvatar->getUserHeight(); };
         auto setter = [=](float value) { myAvatar->setUserHeight(value); };

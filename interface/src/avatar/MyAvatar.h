@@ -1780,6 +1780,8 @@ public:
     AllowAvatarStandingPreference getAllowAvatarStandingPreference() const;
     void setAllowAvatarLeaningPreference(const AllowAvatarLeaningPreference preference);
     AllowAvatarLeaningPreference getAllowAvatarLeaningPreference() const;
+    void setDisableLeanRecenter(const bool disableLeanRecenter);
+    bool getDisableLeanRecenter() const;
     void setIsSitStandStateLocked(bool isLocked);
     bool getIsSitStandStateLocked() const;    void setWalkSpeed(float value);
     float getWalkSpeed() const;
@@ -1795,8 +1797,14 @@ public:
     float getAnalogPlusWalkSpeed() const;
     void setAnalogPlusSprintSpeed(float value);
     float getAnalogPlusSprintSpeed() const;
+
+    // Indicate whether the user's real-world sit/stand state has changed or not.
     void setSitStandStateChange(bool stateChanged);
-    float getSitStandStateChange() const;
+
+    // Determine if the user's real-world sit/stand state has changed.
+    bool getSitStandStateChange() const;
+
+    // Determine if the user is sitting or standing in the real world.
     void updateSitStandState(float newHeightReading, float dt);
 
     QVector<QString> getScriptUrls();
@@ -2994,6 +3002,7 @@ private:
     ThreadSafeValueCache<MyAvatar::AllowAvatarLeaningPreference> _allowAvatarLeaningPreference{
         MyAvatar::AllowAvatarLeaningPreference::Default
     };
+    ThreadSafeValueCache<bool> _disableLeanRecenter{ false };
     float _sitStandStateTimer { 0.0f };
     float _squatTimer { 0.0f };
     float _tippingPoint { _userHeight.get() };
@@ -3038,6 +3047,7 @@ private:
     std::vector<Setting::Handle<QByteArray>> _avatarEntityDataSettings;
     Setting::Handle<QString> _allowAvatarStandingPreferenceSetting;
     Setting::Handle<QString> _allowAvatarLeaningPreferenceSetting;
+    Setting::Handle<bool> _disableLeanRecenterSetting;
 
     // AvatarEntities stuff:
     // We cache the "map of unfortunately-formatted-binary-blobs" because they are expensive to compute
