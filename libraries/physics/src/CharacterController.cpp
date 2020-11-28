@@ -357,13 +357,6 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
         const float MINIMUM_TIME_REMAINING = 0.005f;
         const float MAX_DISPLACEMENT = 0.5f * _radius;
 
-        /* pprono, decremented in myavatar by the followhelper
-	    if (_followTimeRemaining != FLT_MAX)
-	    {
-		    _followTimeRemaining -= dt;
-	    }
-        */
-
         // pp todo break-up below
         float maxFollowTimeRemaining = _followTimeRemainingPerType[0];
         for (int i = 1, e = static_cast<int>(FollowType::Count); i < e; ++i)

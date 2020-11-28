@@ -48,16 +48,9 @@
 #include <SharedUtil.h>
 #include <SoundCache.h>
 #include <ModelEntityItem.h>
-//#include <GLMHelpers.h>
 #include <TextRenderer3D.h>
 #include <UserActivityLogger.h>
-//#include <AnimDebugDraw.h>
-//#include <AnimClip.h>
-//#include <AnimInverseKinematics.h>
-//#include <recording/Deck.h>
 #include <recording/Recorder.h>
-//#include <recording/Clip.h>
-//#include <recording/Frame.h>
 #include <RecordingScriptingInterface.h>
 #include <RenderableModelEntityItem.h>
 #include <VariantMapToScriptValue.h>
@@ -122,10 +115,9 @@ const float POINT_ALPHA_BLENDING = 1.0f;
 
 static bool pptest_forcerotation = false;//true;// used when not lean recentre
 static bool pptest_forcehorizontal = true;// used when not lean recentre
-static bool pptest_forcesetbodytrans2 = true;// used when not crouch recentre
 static bool pptest_forceactive = true;
 static bool pptest_deriveBodyFromHMDSensor_donew = true;
-static bool pptest_snapfollow = true;
+static bool pptest_snapfollowhorizontal = true;
 
 
 const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
@@ -135,7 +127,7 @@ const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
 static_assert(sizeof(MyAvatar::allowAvatarStandingPreferenceStrings) ==
                   sizeof(*MyAvatar::allowAvatarStandingPreferenceStrings) *
                       static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count),
-              "Wrong number of intiialisers for array");
+              "Wrong number of initialisers for array");
 
 const QString MyAvatar::allowAvatarLeaningPreferenceStrings[] = {
     QStringLiteral("WhenUserIsStanding"),
@@ -145,7 +137,7 @@ const QString MyAvatar::allowAvatarLeaningPreferenceStrings[] = {
 static_assert(sizeof(MyAvatar::allowAvatarLeaningPreferenceStrings) ==
                   sizeof(*MyAvatar::allowAvatarLeaningPreferenceStrings) *
                       static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count),
-              "Wrong number of intiialisers for array");
+              "Wrong number of initialisers for array");
 
 MyAvatar::AllowAvatarStandingPreference stringToAllowAvatarStandingPreference(const QString& str) {
     for (uint stringIndex = 0; stringIndex < static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count); stringIndex++) {
@@ -4839,90 +4831,43 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
     float invSensorToWorldScale = getUserEyeHeight() / getEyeHeight();
     glm::vec3 bodyPos = headPosition + invSensorToWorldScale * (headToNeck + neckToRoot);
 
-    static float pptest_pretendstandingHeight = 1.f;
     static bool pptest_usecalcedheight = true;
     static float pptest_pretendstandingOffset_mode0 = 0.11f;
     static float pptest_pretendstandingOffset_mode1 = 0;
     static int pptest_pretendstandingmode = 4;// en mode 1 on peut pas monter des pentes/marches!
-    float pp_forcedBodyPosY = pptest_pretendstandingHeight;
+    const float pp_forcedBodyPosY = rig.getUnscaledHipsHeight();
+
+	glm::quat bodyQuat;
+
+    const controller::Pose hipsControllerPose = getControllerPoseInSensorFrame(controller::Action::HIPS);
+    if (hipsControllerPose.isValid())
     {
-        if (pptest_pretendstandingmode == 0) {
-            int footIndex = rig.indexOfJoint("LeftFoot");
-            glm::vec3 footPos = footIndex != -1 ? rig.getAbsoluteDefaultPose(footIndex).trans() : DEFAULT_AVATAR_LEFTFOOT_POS;
-            footPos *= invSensorToWorldScale;
+        glm::quat hipsOrientation = hipsControllerPose.rotation;
 
-            pp_forcedBodyPosY = -footPos.y + pptest_pretendstandingOffset_mode0;
-        }
-        else if(pptest_pretendstandingmode == 1) {
-            glm::mat4 rigToAvatarMatrix = Matrices::Y_180;
-            glm::mat4 avatarToWorldMatrix = getTransform().getMatrix();// ref: deriveBodyUsingCgModel
-            glm::mat4 sensorToWorldMatrix = getSensorToWorldMatrix();
-            glm::mat4 rigToSensorMatrix = glm::inverse(sensorToWorldMatrix) * avatarToWorldMatrix * rigToAvatarMatrix;
+        hipsOrientation *= Quaternions::Y_180;// todo flip in avatar space?
 
-            int hipsIndex = rig.indexOfJoint("Hips");
-            glm::vec3 hipsPos = hipsIndex != -1 ? rig.getAbsoluteDefaultPose(hipsIndex).trans() : DEFAULT_AVATAR_HIPS_POS;// rig space
 
-            hipsPos = transformPoint(rigToSensorMatrix, hipsPos);
+        const glm::quat hipsOrientationYawOnly = cancelOutRollAndPitch(hipsOrientation);
 
-            pp_forcedBodyPosY = hipsPos.y + pptest_pretendstandingOffset_mode1;
-        } else if (pptest_pretendstandingmode == 2) {
-            pp_forcedBodyPosY = _characterController.getCapsuleHalfHeight() + _characterController.getCapsuleRadius();
-        } else if (pptest_pretendstandingmode == 3) {
-            glm::mat4 avatarToWorldMatrix = getTransform().getMatrix();  // ref: deriveBodyUsingCgModel
-            glm::mat4 sensorToWorldMatrix = getSensorToWorldMatrix();
+        glm::vec3 hipsPos = hipsControllerPose.getTranslation();
+        bodyPos.x = hipsPos.x;
+        bodyPos.z = hipsPos.z;
 
-            auto avatarPos = extractTranslation(avatarToWorldMatrix);
-            auto sensorPos = extractTranslation(sensorToWorldMatrix);
-
-            pp_forcedBodyPosY = avatarPos.y - sensorPos.y;
-
-            int g=0;
-            g++;
-            g = 0;
-        } else if (pptest_pretendstandingmode == 4) {
-            pp_forcedBodyPosY = rig.getUnscaledHipsHeight();
-
-            int g = 0;
-            g++;
-            g = 0;
-        }
+		bodyQuat = hipsOrientationYawOnly;
     }
-
-    
-    if (pptest_deriveBodyFromHMDSensor_donew)
-    {
-        const controller::Pose hipsControllerPose = getControllerPoseInSensorFrame(controller::Action::HIPS);
-
-        if (hipsControllerPose.isValid())
-        {
-            glm::quat hipsOrientation = hipsControllerPose.rotation;
- 
-            hipsOrientation *= Quaternions::Y_180;// todo flip in avatar space?
- 
-
-            const glm::quat hipsOrientationYawOnly = cancelOutRollAndPitch(hipsOrientation);
-
-            glm::vec3 hipsPos = hipsControllerPose.getTranslation();
-            bodyPos.x = hipsPos.x;
-            bodyPos.z = hipsPos.z;
- 
-            if (pptest_pretendstanding)
-            {
-                bodyPos.y = pp_forcedBodyPosY;
-            }
-
-            glm::mat4 bodyMat = createMatFromQuatAndPos(hipsOrientationYawOnly, bodyPos);
-
-            return bodyMat;
-        }
-    }
+	else
+	{
+		bodyQuat = headOrientationYawOnly;
+	}
 
     if (pptest_pretendstanding)
     {
         bodyPos.y = pp_forcedBodyPosY;
     }
 
-    return createMatFromQuatAndPos(headOrientationYawOnly, bodyPos);
+    glm::mat4 bodyMat = createMatFromQuatAndPos(bodyQuat, bodyPos);
+
+    return bodyMat;
 }
 
 glm::mat4 MyAvatar::getSpine2RotationRigSpace() const {
@@ -5333,6 +5278,10 @@ MyAvatar::AllowAvatarLeaningPreference MyAvatar::getAllowAvatarLeaningPreference
     return _allowAvatarLeaningPreference.get();
 }
 
+bool MyAvatar::getIsSitStandStateLocked() const {
+    return _lockSitStandState.get();
+}
+
 float MyAvatar::getWalkSpeed() const {
     if (qApp->isHMDMode()) {
         switch (_controlSchemeIndex) {
@@ -5404,6 +5353,19 @@ void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStand
 void MyAvatar::setAllowAvatarLeaningPreference(const MyAvatar::AllowAvatarLeaningPreference preference) {
     _allowAvatarLeaningPreference.set(preference);
     setHMDLeanRecenterEnabled(preference != AllowAvatarLeaningPreference::Never);
+}
+
+// pp todo remove
+void MyAvatar::setIsSitStandStateLocked(bool isLocked) {
+    _lockSitStandState.set(isLocked);
+    _sitStandStateTimer = 0.0f;
+    _squatTimer = 0.0f;
+    _averageUserHeightSensorSpace = _userHeight.get();
+    _tippingPoint = _userHeight.get();
+    if (!isLocked) {
+        // always start the auto transition mode in standing state.
+        setIsInSittingState(false);
+    }
 }
 
 void MyAvatar::setWalkSpeed(float value) {
@@ -5842,7 +5804,7 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
         }
     } else {
         if (pptest_forcehorizontal || (!isActive(CharacterController::FollowType::Horizontal) && getForceActivateHorizontal())) {
-            activate(CharacterController::FollowType::Horizontal, pptest_snapfollow);
+            activate(CharacterController::FollowType::Horizontal, pptest_snapfollowhorizontal);
             setForceActivateHorizontal(false);
         }
     }
@@ -5909,24 +5871,15 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
         glm::mat4 newBodyMat = createMatFromQuatAndPos(sensorAngularDisplacement * glmExtractRotation(currentBodyMatrix),
                                                        sensorLinearDisplacement + extractTranslation(currentBodyMatrix));
 
-        static bool pptest_verticalonly = true;
-
         if (myAvatar.getHMDCrouchRecenterEnabled()) {
             if (myAvatar.getSitStandStateChange()) {
                 myAvatar.setSitStandStateChange(false);
                 deactivate(CharacterController::FollowType::Vertical);
                 setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(false)));
             }
-        } else if (pptest_forcesetbodytrans2) {
-            if (pptest_verticalonly)// the winning ticket?
-            {
+        } else{
                 glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor(true);
                 newBodyMat[3][1] = derivedBodyMat[3][1];
-            }
-            else
-            {
-                setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(true)));
-            }
         }
 
         return newBodyMat;
@@ -6751,7 +6704,6 @@ void MyAvatar::beginSit(const glm::vec3& position, const glm::quat& rotation) {
         _characterController.setSeated(true);
         setCollisionsEnabled(false);
         setHMDLeanRecenterEnabled(false);
-        //pprono setHMDCrouchRecenterEnabled(false);
         // Disable movement
         setSitDriveKeysStatus(false);
         centerBody();
@@ -6772,7 +6724,6 @@ void MyAvatar::endSit(const glm::vec3& position, const glm::quat& rotation) {
         _characterController.setSeated(false);
         setCollisionsEnabled(true);
         setHMDLeanRecenterEnabled(true);
-        //pprono setHMDCrouchRecenterEnabled(true);
         centerBody();
         slamPosition(position);
         setWorldOrientation(rotation);
@@ -7086,8 +7037,6 @@ bool MyAvatar::getHMDCrouchRecenterEnabled() const {
 
     return (!_characterController.getSeated() &&
             (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !footTrackers);
-
-    //pprono return _hmdCrouchRecenterEnabled;
 }
 
 bool MyAvatar::setPointAt(const glm::vec3& pointAtTarget) {
