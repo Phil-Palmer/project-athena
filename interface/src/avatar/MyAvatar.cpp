@@ -118,6 +118,8 @@ static bool pptest_forcehorizontal = false;//true;// used when not lean recentre
 static bool pptest_forceactive = true;
 static bool pptest_deriveBodyFromHMDSensor_donew = true;
 
+static bool pptest_1 = false;
+static bool pptest_2 = false;
 
 const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
     QStringLiteral("WhenUserIsStanding"),
@@ -5775,10 +5777,11 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
         }
     }
 
-    const bool hipsTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
+    //const bool hipsTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
+    const bool footTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::LEFT_FOOT).isValid();
 
-    if ((hipsTracker || getForceActivateHorizontal()) && !isActive(CharacterController::FollowType::Horizontal)) {
-        activate(CharacterController::FollowType::Horizontal, hipsTracker);
+    if ((footTracker || getForceActivateHorizontal()) && (pptest_1 || !isActive(CharacterController::FollowType::Horizontal))) {
+        activate(CharacterController::FollowType::Horizontal, footTracker);
         setForceActivateHorizontal(false);
     }
     else {
@@ -5877,7 +5880,14 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
             }
         } else{
                 glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor(true);
-                newBodyMat[3][1] = derivedBodyMat[3][1];
+                if (pptest_2)
+                {
+                    setTranslation(newBodyMat, extractTranslation(derivedBodyMat));
+                }
+                else
+                {
+                    newBodyMat[3][1] = derivedBodyMat[3][1];
+                }
         }
 
         return newBodyMat;

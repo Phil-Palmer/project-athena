@@ -452,7 +452,7 @@ void setupPreferences() {
         items << "When I'm standing"
               << "Always"
               << "Never"
-              << "(Experimental) Always, no recenter";// Must match the order in MyAvatar::AllowAvatarLeaningPreference.
+              << "Always, no recenter (Experimental)";// Must match the order in MyAvatar::AllowAvatarLeaningPreference.
         assert(items.size() == static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count));
         preference->setHeading("Allow my avatar to lean:");
         preference->setItems(items);
