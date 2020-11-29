@@ -2023,6 +2023,9 @@ public:
     bool isJumping();
     bool getHMDCrouchRecenterEnabled() const;
 
+    // Determine if the avatar is allowed to lean in its current situation.
+    bool IsAllowedToLean() const;
+
 public slots:
 
    /**jsdoc
