@@ -2185,13 +2185,6 @@ public slots:
     Q_INVOKABLE void updateMotionBehaviorFromMenu();
 
     /**jsdoc
-     * @function MyAvatar.setToggleHips
-     * @param {boolean} enabled - Enabled.
-     * @deprecated This function is deprecated and will be removed.
-     */
-    void setToggleHips(bool followHead);
-
-    /**jsdoc
      * Displays the base of support area debug graphics if in HMD mode. If your head goes outside this area your avatar's hips 
      * are moved to counterbalance your avatar, and if your head moves too far then your avatar's position is moved (i.e., a 
      * step happens).
@@ -2897,13 +2890,10 @@ private:
         void setForceActivateVertical(bool val);
         bool getForceActivateHorizontal() const;
         void setForceActivateHorizontal(bool val);
-        bool getToggleHipsFollowing() const;
-        void setToggleHipsFollowing(bool followHead);
         bool _squatDetected { false };
         std::atomic<bool> _forceActivateRotation { false };
         std::atomic<bool> _forceActivateVertical { false };
         std::atomic<bool> _forceActivateHorizontal { false };
-        std::atomic<bool> _toggleHipsFollowing { true };
     };
 
     FollowHelper _follow;

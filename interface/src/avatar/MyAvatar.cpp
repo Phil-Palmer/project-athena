@@ -1399,18 +1399,6 @@ float loadSetting(Settings& settings, const QString& name, float defaultValue) {
     return value;
 }
 
-void MyAvatar::setToggleHips(bool followHead) {
-    _follow.setToggleHipsFollowing(followHead);
-}
-
-void MyAvatar::FollowHelper::setToggleHipsFollowing(bool followHead) {
-    _toggleHipsFollowing = followHead;
-}
-
-bool MyAvatar::FollowHelper::getToggleHipsFollowing() const {
-    return _toggleHipsFollowing;
-}
-
 void MyAvatar::setEnableDebugDrawBaseOfSupport(bool isEnabled) {
     _enableDebugDrawBaseOfSupport = isEnabled;
 }
@@ -2037,7 +2025,6 @@ void MyAvatar::loadData() {
         allowAvatarLeaningPreferenceStrings[static_cast<uint>(AllowAvatarLeaningPreference::Default)])));
 
     setEnableMeshVisible(Menu::getInstance()->isOptionChecked(MenuOption::MeshVisible));
-    _follow.setToggleHipsFollowing (Menu::getInstance()->isOptionChecked(MenuOption::ToggleHipsFollowing));
     setEnableDebugDrawBaseOfSupport(Menu::getInstance()->isOptionChecked(MenuOption::AnimDebugDrawBaseOfSupport));
     setEnableDebugDrawDefaultPose(Menu::getInstance()->isOptionChecked(MenuOption::AnimDebugDrawDefaultPose));
     setEnableDebugDrawAnimPose(Menu::getInstance()->isOptionChecked(MenuOption::AnimDebugDrawAnimPose));
