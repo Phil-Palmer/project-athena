@@ -449,19 +449,15 @@ void setupPreferences() {
 
         auto preference = new RadioButtonsPreference(VR_MOVEMENT, "Allow my avatar to lean", getter, setter);
         QStringList items;
-        items << "When I'm standing" << "Always" << "Never";// Must match the order in MyAvatar::AllowAvatarLeaningPreference.
+        items << "When I'm standing"
+              << "Always"
+              << "Never"
+              << "(Experimental) Always, no recenter";// Must match the order in MyAvatar::AllowAvatarLeaningPreference.
         assert(items.size() == static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count));
         preference->setHeading("Allow my avatar to lean:");
         preference->setItems(items);
         preferences->addPreference(preference);
     }
-    {
-        auto getter = [myAvatar]() -> bool { return myAvatar->getDisableLeanRecenter(); };
-        auto setter = [myAvatar](bool value) { myAvatar->setDisableLeanRecenter(value); };
-        auto preference = new CheckPreference(VR_MOVEMENT, "Disable lean recentering (Experimental)", getter, setter);
-        preferences->addPreference(preference);
-    }
-
     {
         auto getter = [=]()->float { return myAvatar->getUserHeight(); };
         auto setter = [=](float value) { myAvatar->setUserHeight(value); };
