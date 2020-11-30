@@ -5625,7 +5625,12 @@ float MyAvatar::FollowHelper::getMaxTimeRemaining() const {
 
 void MyAvatar::FollowHelper::decrementTimeRemaining(float dt) {
     for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
-        _timeRemaining[i] -= dt;
+        if (_timeRemaining[i] == FLT_MAX) {
+            _timeRemaining[i] = 0.f;
+        }
+        else {
+            _timeRemaining[i] -= dt;
+        }
     }
 }
 
