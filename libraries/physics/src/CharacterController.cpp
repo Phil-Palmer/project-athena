@@ -351,47 +351,33 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
     btVector3 velocity = _rigidBody->getLinearVelocity() - _parentVelocity;
     computeNewVelocity(dt, velocity);
 
-    if (_followTimeRemainingPerType != nullptr)
-    {
+    if (_followTimeRemainingPerType != nullptr) {
+        const float MINIMUM_TIME_REMAINING = 0.005f;//pp todo resolve dup
 
-        const float MINIMUM_TIME_REMAINING = 0.005f;
-        const float MAX_DISPLACEMENT = 0.5f * _radius;
+        btVector3 startPos = _rigidBody->getWorldTransform().getOrigin();
+        btVector3 endPos = startPos;
 
-        // pp todo break-up below
-        float maxFollowTimeRemaining = _followTimeRemainingPerType[0];
-        for (int i = 1, e = static_cast<int>(FollowType::Count); i < e; ++i)
-        {
-            maxFollowTimeRemaining = glm::max(maxFollowTimeRemaining, _followTimeRemainingPerType[i]);
-        }
-        //
+        if ((_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] >= MINIMUM_TIME_REMAINING) ||
+            (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] >= MINIMUM_TIME_REMAINING)) {
 
-        if (maxFollowTimeRemaining >= MINIMUM_TIME_REMAINING) {
-            btTransform bodyTransform = _rigidBody->getWorldTransform();
-
-            btVector3 startPos = bodyTransform.getOrigin();
             btVector3 deltaPos = _followDesiredBodyTransform.getOrigin() - startPos;
 
-	        btVector3 vel = deltaPos / maxFollowTimeRemaining;
-	        btVector3 linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
+            btVector3 linearDisplacement((deltaPos.x() * dt) / std::max(dt, _followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)]),
+                                         (deltaPos.y() * dt) / std::max(dt, _followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)]),
+                                         (deltaPos.z() * dt) / std::max(dt, _followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)]));
 
-            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] == FLT_MAX)
-            {
-                linearDisplacement.setX(deltaPos.x());
-                linearDisplacement.setZ(deltaPos.z());
-            }
+            const float MAX_DISPLACEMENT = 0.5f * _radius;
+            linearDisplacement = clampLength(linearDisplacement, MAX_DISPLACEMENT);// clamp displacement to prevent tunneling.
 
-            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] == FLT_MAX)
-            {
-                linearDisplacement.setY(deltaPos.y());
-            }
-
-            btVector3 endPos = startPos + linearDisplacement;
+            endPos += linearDisplacement;
 
             // resolve the simple linearDisplacement
             _followLinearDisplacement += linearDisplacement;
+        }
 
-            // now for the rotational part...
-            btQuaternion startRot = bodyTransform.getRotation();
+        // now for the rotational part...
+        if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Rotation)] >= MINIMUM_TIME_REMAINING) {
+            btQuaternion startRot = _rigidBody->getWorldTransform().getRotation();
             btQuaternion desiredRot = _followDesiredBodyTransform.getRotation();
 
             // startRot as default rotation
@@ -421,12 +407,8 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
                 float angle = 2.0f * acosf(qDot);
 
                 const float rotationFollowTimeRemaining = _followTimeRemainingPerType[static_cast<uint>(FollowType::Rotation)];
-			    if (rotationFollowTimeRemaining != FLT_MAX)
-			    {
-                    if (dt < rotationFollowTimeRemaining) {
-                        angle *= dt / rotationFollowTimeRemaining;// pp todo ensure no db0
-                    }
-			    }
+			    
+                angle = (angle * dt) / std::max(dt, rotationFollowTimeRemaining);
 
                 // accumulate rotation
                 deltaRot = btQuaternion(axis, angle);
@@ -439,6 +421,7 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
                 btVector3 swingDisplacement = rotateVector(endRot, -shapeLocalOffset) - rotateVector(startRot, -shapeLocalOffset);
                 _followLinearDisplacement += swingDisplacement;
             }
+
             _rigidBody->setWorldTransform(btTransform(endRot, endPos));
         }
     }

@@ -5595,8 +5595,11 @@ void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
 // pp todo comment snapFollow
 void MyAvatar::FollowHelper::activate(CharacterController::FollowType type, const bool snapFollow) {
     assert(type >= 0 && type < CharacterController::FollowType::Count);
+
+    const float MINIMUM_TIME_REMAINING = 0.005f;  //pp todo resolve dup
+
     // TODO: Perhaps, the follow time should be proportional to the displacement.
-    _timeRemaining[(int)type] = snapFollow ? FLT_MAX : FOLLOW_TIME;
+    _timeRemaining[(int)type] = snapFollow ? MINIMUM_TIME_REMAINING : FOLLOW_TIME;
 }
 bool MyAvatar::FollowHelper::isActive(CharacterController::FollowType type) const {
     assert(type >= 0 && type < CharacterController::FollowType::Count);
@@ -5612,25 +5615,9 @@ bool MyAvatar::FollowHelper::isActive() const {
     return false;
 }
 
-// pp todo remove?
-float MyAvatar::FollowHelper::getMaxTimeRemaining() const {
-    float max = 0.0f;
-    for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
-        if (_timeRemaining[i] > max) {
-            max = _timeRemaining[i];
-        }
-    }
-    return max;
-}
-
 void MyAvatar::FollowHelper::decrementTimeRemaining(float dt) {
     for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
-        if (_timeRemaining[i] == FLT_MAX) {
-            _timeRemaining[i] = 0.f;
-        }
-        else {
-            _timeRemaining[i] -= dt;
-        }
+        _timeRemaining[i] -= dt;
     }
 }
 
