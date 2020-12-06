@@ -351,6 +351,8 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
     btVector3 velocity = _rigidBody->getLinearVelocity() - _parentVelocity;
     computeNewVelocity(dt, velocity);
 
+    static bool pptest_checkrotval = true;
+
     if (_followTimeRemainingPerType != nullptr)
     {
 
@@ -391,53 +393,58 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
             _followLinearDisplacement += linearDisplacement;
 
             // now for the rotational part...
+
             btQuaternion startRot = bodyTransform.getRotation();
-            btQuaternion desiredRot = _followDesiredBodyTransform.getRotation();
 
             // startRot as default rotation
             btQuaternion endRot = startRot;
 
-            // the dot product between two quaternions is equal to +/- cos(angle/2)
-            // where 'angle' is that of the rotation between them
-            float qDot = desiredRot.dot(startRot);
+            if (!pptest_checkrotval || _followTimeRemainingPerType[static_cast<uint>(FollowType::Rotation)] >= MINIMUM_TIME_REMAINING)
+            {
+                btQuaternion desiredRot = _followDesiredBodyTransform.getRotation();
 
-            // when the abs() value of the dot product is approximately 1.0
-            // then the two rotations are effectively adjacent
-            const float MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS = 0.99999f; // corresponds to approx 0.5 degrees
-            if (fabsf(qDot) < MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS) {
-                if (qDot < 0.0f) {
-                    // the quaternions are actually on opposite hyperhemispheres
-                    // so we move one to agree with the other and negate qDot
-                    desiredRot = -desiredRot;
-                    qDot = -qDot;
-                }
-                btQuaternion deltaRot = desiredRot * startRot.inverse();
+                // the dot product between two quaternions is equal to +/- cos(angle/2)
+                // where 'angle' is that of the rotation between them
+                float qDot = desiredRot.dot(startRot);
 
-                // the axis is the imaginary part, but scaled by sin(angle/2)
-                btVector3 axis(deltaRot.getX(), deltaRot.getY(), deltaRot.getZ());
-                axis /= sqrtf(1.0f - qDot * qDot);
-
-                // compute the angle we will resolve for this dt, but don't overshoot
-                float angle = 2.0f * acosf(qDot);
-
-                const float rotationFollowTimeRemaining = _followTimeRemainingPerType[static_cast<uint>(FollowType::Rotation)];
-			    if (rotationFollowTimeRemaining != FLT_MAX)
-			    {
-                    if (dt < rotationFollowTimeRemaining) {
-                        angle *= dt / rotationFollowTimeRemaining;// pp todo ensure no db0
+                // when the abs() value of the dot product is approximately 1.0
+                // then the two rotations are effectively adjacent
+                const float MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS = 0.99999f; // corresponds to approx 0.5 degrees
+                if (fabsf(qDot) < MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS) {
+                    if (qDot < 0.0f) {
+                        // the quaternions are actually on opposite hyperhemispheres
+                        // so we move one to agree with the other and negate qDot
+                        desiredRot = -desiredRot;
+                        qDot = -qDot;
                     }
-			    }
+                    btQuaternion deltaRot = desiredRot * startRot.inverse();
 
-                // accumulate rotation
-                deltaRot = btQuaternion(axis, angle);
-                _followAngularDisplacement = (deltaRot * _followAngularDisplacement).normalize();
+                    // the axis is the imaginary part, but scaled by sin(angle/2)
+                    btVector3 axis(deltaRot.getX(), deltaRot.getY(), deltaRot.getZ());
+                    axis /= sqrtf(1.0f - qDot * qDot);
 
-                // in order to accumulate displacement of avatar position, we need to take _shapeLocalOffset into account.
-                btVector3 shapeLocalOffset = glmToBullet(_shapeLocalOffset);
+                    // compute the angle we will resolve for this dt, but don't overshoot
+                    float angle = 2.0f * acosf(qDot);
 
-                endRot = deltaRot * startRot;
-                btVector3 swingDisplacement = rotateVector(endRot, -shapeLocalOffset) - rotateVector(startRot, -shapeLocalOffset);
-                _followLinearDisplacement += swingDisplacement;
+                    const float rotationFollowTimeRemaining = _followTimeRemainingPerType[static_cast<uint>(FollowType::Rotation)];
+			        if (rotationFollowTimeRemaining != FLT_MAX)
+			        {
+                        if (dt < rotationFollowTimeRemaining) {
+                            angle *= dt / rotationFollowTimeRemaining;// pp todo ensure no db0
+                        }
+			        }
+
+                    // accumulate rotation
+                    deltaRot = btQuaternion(axis, angle);
+                    _followAngularDisplacement = (deltaRot * _followAngularDisplacement).normalize();
+
+                    // in order to accumulate displacement of avatar position, we need to take _shapeLocalOffset into account.
+                    btVector3 shapeLocalOffset = glmToBullet(_shapeLocalOffset);
+
+                    endRot = deltaRot * startRot;
+                    btVector3 swingDisplacement = rotateVector(endRot, -shapeLocalOffset) - rotateVector(startRot, -shapeLocalOffset);
+                    _followLinearDisplacement += swingDisplacement;
+                }
             }
             _rigidBody->setWorldTransform(btTransform(endRot, endPos));
         }
