@@ -360,20 +360,17 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
         const float MAX_DISPLACEMENT = 0.5f * _radius;
 
         // pp todo break-up below
-        float maxFollowTimeRemaining = _followTimeRemainingPerType[0];
-        for (int i = 1, e = static_cast<int>(FollowType::Count); i < e; ++i)
-        {
-            maxFollowTimeRemaining = glm::max(maxFollowTimeRemaining, _followTimeRemainingPerType[i]);
-        }
+        const float maxPosFollowTimeRemaining =
+            glm::max(_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)], _followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)]);
         //
 
-        if (maxFollowTimeRemaining >= MINIMUM_TIME_REMAINING) {
+        if (maxPosFollowTimeRemaining >= MINIMUM_TIME_REMAINING) {
             btTransform bodyTransform = _rigidBody->getWorldTransform();
 
             btVector3 startPos = bodyTransform.getOrigin();
             btVector3 deltaPos = _followDesiredBodyTransform.getOrigin() - startPos;
 
-	        btVector3 vel = deltaPos / maxFollowTimeRemaining;
+	        btVector3 vel = deltaPos / maxPosFollowTimeRemaining;
 	        btVector3 linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
 
             if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] == FLT_MAX)
