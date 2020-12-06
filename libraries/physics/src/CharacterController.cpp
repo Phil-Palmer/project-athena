@@ -355,7 +355,6 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
 
     if (_followTimeRemainingPerType != nullptr)
     {
-
         const float MINIMUM_TIME_REMAINING = 0.005f;
         const float MAX_DISPLACEMENT = 0.5f * _radius;
 
@@ -370,18 +369,44 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
             btVector3 startPos = bodyTransform.getOrigin();
             btVector3 deltaPos = _followDesiredBodyTransform.getOrigin() - startPos;
 
-	        btVector3 vel = deltaPos / maxPosFollowTimeRemaining;
-	        btVector3 linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
+            static int pptest_mode = 0;
 
-            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] == FLT_MAX)
+            btVector3 linearDisplacement;
+            if (pptest_mode == 0)//old
             {
-                linearDisplacement.setX(deltaPos.x());
-                linearDisplacement.setZ(deltaPos.z());
+	            btVector3 vel = deltaPos / maxPosFollowTimeRemaining;
+	            linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
+
+                if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] == FLT_MAX)
+                {
+                    linearDisplacement.setX(deltaPos.x());
+                    linearDisplacement.setZ(deltaPos.z());
+                }
+
+                if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] == FLT_MAX)
+                {
+                    linearDisplacement.setY(deltaPos.y());
+                }
             }
-
-            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] == FLT_MAX)
+            else if (pptest_mode == 1)
             {
-                linearDisplacement.setY(deltaPos.y());
+                btVector3 linearDisplacement = deltaPos;
+
+                if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] != FLT_MAX)
+                {
+                    linearDisplacement.setX((linearDisplacement.x() * dt) /
+                                            _followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)]);
+                    linearDisplacement.setZ((linearDisplacement.z() * dt) /
+                                            _followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)]);
+                }
+
+                if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] != FLT_MAX)
+                {
+                    linearDisplacement.setY((linearDisplacement.y() * dt) / _followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)]);
+                }
+
+                linearDisplacement =
+                    clampLength(linearDisplacement, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
             }
 
             btVector3 endPos = startPos + linearDisplacement;
