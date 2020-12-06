@@ -346,21 +346,21 @@ const btScalar MIN_TARGET_SPEED = 0.001f;
 const btScalar MIN_TARGET_SPEED_SQUARED = MIN_TARGET_SPEED * MIN_TARGET_SPEED;
 
 void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar dt) {
-    _stepHeight = _minStepHeight;  // clears memory of last step obstacle
+    _stepHeight = _minStepHeight; // clears memory of last step obstacle
     _hasSupport = checkForSupport(collisionWorld);
     btVector3 velocity = _rigidBody->getLinearVelocity() - _parentVelocity;
     computeNewVelocity(dt, velocity);
 
-    static bool pptest_dotest1 = false;//unless using FLT_MAX, needed to avoid sinking into ground
-    static bool pptest_dotest2 = false;
+    if (_followTimeRemainingPerType != nullptr)
+    {
 
-    if (_followTimeRemainingPerType != nullptr) {
         const float MINIMUM_TIME_REMAINING = 0.005f;
         const float MAX_DISPLACEMENT = 0.5f * _radius;
 
         // pp todo break-up below
         float maxFollowTimeRemaining = _followTimeRemainingPerType[0];
-        for (int i = 1, e = static_cast<int>(FollowType::Count); i < e; ++i) {
+        for (int i = 1, e = static_cast<int>(FollowType::Count); i < e; ++i)
+        {
             maxFollowTimeRemaining = glm::max(maxFollowTimeRemaining, _followTimeRemainingPerType[i]);
         }
         //
@@ -371,26 +371,18 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
             btVector3 startPos = bodyTransform.getOrigin();
             btVector3 deltaPos = _followDesiredBodyTransform.getOrigin() - startPos;
 
-            btVector3 vel = deltaPos / maxFollowTimeRemaining;
-            btVector3 linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
+	        btVector3 vel = deltaPos / maxFollowTimeRemaining;
+	        btVector3 linearDisplacement = clampLength(vel * dt, MAX_DISPLACEMENT);  // clamp displacement to prevent tunneling.
 
-            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] == FLT_MAX) {
+            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)] == FLT_MAX)
+            {
                 linearDisplacement.setX(deltaPos.x());
                 linearDisplacement.setZ(deltaPos.z());
-
-                if (pptest_dotest1)
-                {
-                    linearDisplacement.setY(deltaPos.y());
-                }
             }
 
-            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] == FLT_MAX) {
+            if (_followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)] == FLT_MAX)
+            {
                 linearDisplacement.setY(deltaPos.y());
-
-                if (pptest_dotest2) {
-                    linearDisplacement.setX(deltaPos.x());
-                    linearDisplacement.setZ(deltaPos.z());
-                }
             }
 
             btVector3 endPos = startPos + linearDisplacement;
@@ -411,7 +403,7 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
 
             // when the abs() value of the dot product is approximately 1.0
             // then the two rotations are effectively adjacent
-            const float MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS = 0.99999f;  // corresponds to approx 0.5 degrees
+            const float MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS = 0.99999f; // corresponds to approx 0.5 degrees
             if (fabsf(qDot) < MIN_DOT_PRODUCT_OF_ADJACENT_QUATERNIONS) {
                 if (qDot < 0.0f) {
                     // the quaternions are actually on opposite hyperhemispheres
@@ -429,11 +421,12 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
                 float angle = 2.0f * acosf(qDot);
 
                 const float rotationFollowTimeRemaining = _followTimeRemainingPerType[static_cast<uint>(FollowType::Rotation)];
-                if (rotationFollowTimeRemaining != FLT_MAX) {
+			    if (rotationFollowTimeRemaining != FLT_MAX)
+			    {
                     if (dt < rotationFollowTimeRemaining) {
-                        angle *= dt / rotationFollowTimeRemaining;  // pp todo ensure no db0
+                        angle *= dt / rotationFollowTimeRemaining;// pp todo ensure no db0
                     }
-                }
+			    }
 
                 // accumulate rotation
                 deltaRot = btQuaternion(axis, angle);
@@ -471,7 +464,7 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
             // add minimum velocity to counteract gravity's displacement during one step
             // Note: the 0.5 factor comes from the fact that we really want the
             // average velocity contribution from gravity during the step
-            stepUpSpeed -= 0.5f * _currentGravity * timeToStep;  // remember: _gravity is negative scalar
+            stepUpSpeed -= 0.5f * _currentGravity * timeToStep; // remember: _gravity is negative scalar
 
             btScalar vDotUp = velocity.dot(_currentUp);
             if (vDotUp < stepUpSpeed) {
