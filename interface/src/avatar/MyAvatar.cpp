@@ -111,16 +111,6 @@ const QString POINT_BLEND_LINEAR_ALPHA_NAME = "pointBlendAlpha";
 const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
 
-
-
-static bool pptest_forcerotation = false;//true;// used when not lean recentre
-static bool pptest_forcehorizontal = false;//true;// used when not lean recentre
-static bool pptest_forceactive = true;
-static bool pptest_deriveBodyFromHMDSensor_donew = true;
-
-static bool pptest_1 = false;
-static bool pptest_2 = false;
-
 const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
     QStringLiteral("WhenUserIsStanding"),
     QStringLiteral("Always"),
@@ -5776,7 +5766,7 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
     //const bool hipsTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
     const bool footTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::LEFT_FOOT).isValid();
 
-    if ((footTracker || getForceActivateHorizontal()) && (pptest_1 || !isActive(CharacterController::FollowType::Horizontal))) {
+    if ((footTracker || getForceActivateHorizontal()) && !isActive(CharacterController::FollowType::Horizontal)) {
         activate(CharacterController::FollowType::Horizontal, footTracker);
         setForceActivateHorizontal(false);
     }
@@ -5850,7 +5840,7 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
 
 glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix) {
 
-    if (pptest_forceactive || isActive()) {
+    if (isActive()) {
         float dt = myAvatar.getCharacterController()->getFollowTime();
         decrementTimeRemaining(dt);
 
@@ -5876,14 +5866,7 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
             }
         } else{
                 glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor(true);
-                if (pptest_2)
-                {
-                    setTranslation(newBodyMat, extractTranslation(derivedBodyMat));
-                }
-                else
-                {
-                    newBodyMat[3][1] = derivedBodyMat[3][1];
-                }
+                newBodyMat[3][1] = derivedBodyMat[3][1];
         }
 
         return newBodyMat;
@@ -5894,7 +5877,7 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
 }
 
 bool MyAvatar::FollowHelper::getForceActivateRotation() const {
-    return pptest_forcerotation || _forceActivateRotation;
+    return _forceActivateRotation;
 }
 
 void MyAvatar::FollowHelper::setForceActivateRotation(bool val) {

@@ -388,7 +388,6 @@ class MyAvatar : public Avatar {
 
     Q_PROPERTY(bool centerOfGravityModelEnabled READ getCenterOfGravityModelEnabled WRITE setCenterOfGravityModelEnabled)
     Q_PROPERTY(bool hmdLeanRecenterEnabled READ getHMDLeanRecenterEnabled WRITE setHMDLeanRecenterEnabled)
-    //pprono Q_PROPERTY(bool hmdCrouchRecenterEnabled READ getHMDCrouchRecenterEnabled WRITE setHMDCrouchRecenterEnabled)
     Q_PROPERTY(bool collisionsEnabled READ getCollisionsEnabled WRITE setCollisionsEnabled)
     Q_PROPERTY(bool otherAvatarsCollisionsEnabled READ getOtherAvatarsCollisionsEnabled WRITE setOtherAvatarsCollisionsEnabled)
     Q_PROPERTY(bool characterControllerEnabled READ getCharacterControllerEnabled WRITE setCharacterControllerEnabled)
@@ -1782,7 +1781,8 @@ public:
     void setAllowAvatarLeaningPreference(const AllowAvatarLeaningPreference preference);
     AllowAvatarLeaningPreference getAllowAvatarLeaningPreference() const;
     void setIsSitStandStateLocked(bool isLocked);
-    bool getIsSitStandStateLocked() const;    void setWalkSpeed(float value);
+    bool getIsSitStandStateLocked() const;
+    void setWalkSpeed(float value);
     float getWalkSpeed() const;
     void setWalkBackwardSpeed(float value);
     float getWalkBackwardSpeed() const;
@@ -2939,7 +2939,7 @@ private:
 
     bool _centerOfGravityModelEnabled { true };
     bool _hmdLeanRecenterEnabled { true };
-    bool _hmdCrouchRecenterEnabled{ true };// pp todo comment, todo rename sitRece
+    bool _hmdCrouchRecenterEnabled{ true };// pp todo comment
     bool _sprint { false };
 
     AnimPose _prePhysicsRoomPose;
