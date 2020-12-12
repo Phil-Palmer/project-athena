@@ -1732,7 +1732,7 @@ public:
 
     // derive avatar body position and orientation from the current HMD Sensor location.
     // results are in sensor frame (-z forward)
-    glm::mat4 deriveBodyFromHMDSensor(const bool ignoreYPos) const;
+    glm::mat4 deriveBodyFromHMDSensor(const bool forceFollowYPos = false) const;
 
     glm::mat4 getSpine2RotationRigSpace() const;
 
