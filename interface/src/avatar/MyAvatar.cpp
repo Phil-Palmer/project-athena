@@ -4772,8 +4772,9 @@ void MyAvatar::triggerRotationRecenter() {
 }
 
 // old school meat hook style
-glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) const {
-
+// ignoreYPos: true to ignore the sensor's Y position,
+// instead setting the body's vertical position as if it were standing in its T-pose.
+glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool ignoreYPos) const {
     glm::vec3 headPosition(0.0f, _userHeight.get(), 0.0f);
     glm::quat headOrientation;
     auto headPose = getControllerPoseInSensorFrame(controller::Action::HEAD);
@@ -4809,18 +4810,10 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
 
     float invSensorToWorldScale = getUserEyeHeight() / getEyeHeight();
     glm::vec3 bodyPos = headPosition + invSensorToWorldScale * (headToNeck + neckToRoot);
-
-    static bool pptest_usecalcedheight = true;
-    static float pptest_pretendstandingOffset_mode0 = 0.11f;
-    static float pptest_pretendstandingOffset_mode1 = 0;
-    static int pptest_pretendstandingmode = 4;// en mode 1 on peut pas monter des pentes/marches!
-    const float pp_forcedBodyPosY = rig.getUnscaledHipsHeight();
-
 	glm::quat bodyQuat;
 
     const controller::Pose hipsControllerPose = getControllerPoseInSensorFrame(controller::Action::HIPS);
-    if (hipsControllerPose.isValid())
-    {
+    if (hipsControllerPose.isValid()) {
         glm::quat hipsOrientation = hipsControllerPose.rotation;
 
         hipsOrientation *= Quaternions::Y_180;// todo flip in avatar space?
@@ -4834,14 +4827,13 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool pptest_pretendstanding) c
 
 		bodyQuat = hipsOrientationYawOnly;
     }
-	else
-	{
+	else {
 		bodyQuat = headOrientationYawOnly;
 	}
 
-    if (pptest_pretendstanding)
-    {
-        bodyPos.y = pp_forcedBodyPosY;
+    if (ignoreYPos) {
+        // Set the body's vertical position as if it were standing in its T-pose.
+        bodyPos.y = rig.getUnscaledHipsHeight();
     }
 
     glm::mat4 bodyMat = createMatFromQuatAndPos(bodyQuat, bodyPos);
@@ -5583,7 +5575,9 @@ void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
 
 const float MINIMUM_TIME_REMAINING = 0.005f;  //pp todo resolve dup
 
-// pp todo comment snapFollow
+// snapFollow: true to snap immediately to the desired transform with regard to 'type',
+// eg. activate(FollowType::Rotation, true) snaps the FollowHelper's rotation immediately
+// to the rotation of its _followDesiredBodyTransform.
 void MyAvatar::FollowHelper::activate(CharacterController::FollowType type, const bool snapFollow) {
     assert(type >= 0 && type < CharacterController::FollowType::Count);
 
@@ -5615,13 +5609,15 @@ void MyAvatar::FollowHelper::decrementTimeRemaining(float dt) {
     }
 }
 
+// shouldSnapOut: (out) true if the FollowHelper should snap immediately to its desired rotation.
 bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix, bool& shouldSnapOut) const {
 
     shouldSnapOut = false;
 
+    // If hips are under direct control (tracked), they give our desired body rotation and we snap to it every frame.
     if (myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid())
     {
-        shouldSnapOut=true;
+        shouldSnapOut = true;
         return true;
     }
 
@@ -5865,8 +5861,8 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
                 setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor(false)));
             }
         } else{
-                glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor(true);
-                newBodyMat[3][1] = derivedBodyMat[3][1];
+            glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor(true);
+            newBodyMat[3][1] = derivedBodyMat[3][1];
         }
 
         return newBodyMat;

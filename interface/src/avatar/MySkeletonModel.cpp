@@ -78,7 +78,7 @@ static AnimPose computeHipsInSensorFrame(MyAvatar* myAvatar, bool isFlying) {
     }
     else {
         // otherwise use the default of putting the hips under the head
-        hipsMat = myAvatar->deriveBodyFromHMDSensor();
+        hipsMat = myAvatar->deriveBodyFromHMDSensor(false);
     }
 
     glm::vec3 hipsPos = extractTranslation(hipsMat);
