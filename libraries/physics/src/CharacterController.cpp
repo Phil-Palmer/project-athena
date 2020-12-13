@@ -701,22 +701,18 @@ void CharacterController::applyMotor(int index, btScalar dt, btVector3& worldVel
     btVector3 axis(btScalar(0), btScalar(0), btScalar(0));
     btScalar angle(0);
 
-    auto rotateToWorldFrame = [&](const btVector3 vectorInMotorFrame)
-    {
+    auto rotateToWorldFrame = [&](const btVector3 vectorInMotorFrame) {
         if (motorHasRotation) {
             return vectorInMotorFrame.rotate(axis, angle);
-        }
-        else {
+        } else {
             return vectorInMotorFrame;
         }
     };
 
-    auto rotateToMotorFrame = [&](const btVector3 vectorInWorldFrame)
-    {
+    auto rotateToMotorFrame = [&](const btVector3 vectorInWorldFrame) {
         if (motorHasRotation) {
             return vectorInWorldFrame.rotate(axis, -angle);
-        }
-        else {
+        } else {
             return vectorInWorldFrame;
         }
     };

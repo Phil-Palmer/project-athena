@@ -563,14 +563,14 @@ public:
         WhenUserIsStanding,
         Always,
         Never,
-        AlwaysNoRecenter,// experimental
+        AlwaysNoRecenter,  // experimental
         Count,
         Default = WhenUserIsStanding,
     };
     Q_ENUM(AllowAvatarLeaningPreference)
 
-    // pp todo comment
-    static const QString MyAvatar::allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Count)];
+    static const QString
+        MyAvatar::allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Count)];
     static const QString MyAvatar::allowAvatarLeaningPreferenceStrings[static_cast<uint>(AllowAvatarLeaningPreference::Count)];
 
     explicit MyAvatar(QThread* thread);
@@ -1796,14 +1796,8 @@ public:
     float getAnalogPlusWalkSpeed() const;
     void setAnalogPlusSprintSpeed(float value);
     float getAnalogPlusSprintSpeed() const;
-
-    // Indicate whether the user's real-world sit/stand state has changed or not.
     void setSitStandStateChange(bool stateChanged);
-
-    // Determine if the user's real-world sit/stand state has changed.
     bool getSitStandStateChange() const;
-
-    // Determine if the user is sitting or standing in the real world.
     void updateSitStandState(float newHeightReading, float dt);
 
     QVector<QString> getScriptUrls();
@@ -2021,15 +2015,9 @@ public:
     glm::vec3 getCameraEyesPosition(float deltaTime);
     bool isJumping();
     bool getHMDCrouchRecenterEnabled() const;
-
-    // Determine if the avatar is allowed to lean in its current situation.
-    bool IsAllowedToLean() const;
-
-    // Determine if the feet are under direct control (tracked).
-    bool AreFeetTracked() const;
-
-    // Determine if the hips are under direct control (tracked).
-    bool AreHipsTracked() const;
+    bool isAllowedToLean() const;
+    bool areFeetTracked() const;
+    bool areHipsTracked() const;
 
 public slots:
 
@@ -2945,7 +2933,9 @@ private:
 
     bool _centerOfGravityModelEnabled { true };
     bool _hmdLeanRecenterEnabled { true };
-    bool _hmdCrouchRecenterEnabled{ true };// pp todo comment
+    bool _hmdCrouchRecenterEnabled{
+        true
+    };  // Is MyAvatar allowed to recentre vertically (stand) when the user is sitting in the real world.
     bool _sprint { false };
 
     AnimPose _prePhysicsRoomPose;
@@ -2995,10 +2985,10 @@ private:
     ThreadSafeValueCache<bool> _isInSittingState { false };
     ThreadSafeValueCache<MyAvatar::AllowAvatarStandingPreference> _allowAvatarStandingPreference{
         MyAvatar::AllowAvatarStandingPreference::Default
-    };
+    };  // The user preference of when MyAvatar may stand.
     ThreadSafeValueCache<MyAvatar::AllowAvatarLeaningPreference> _allowAvatarLeaningPreference{
         MyAvatar::AllowAvatarLeaningPreference::Default
-    };
+    };  // The user preference of when MyAvatar may lean.
     float _sitStandStateTimer { 0.0f };
     float _squatTimer { 0.0f };
     float _tippingPoint { _userHeight.get() };

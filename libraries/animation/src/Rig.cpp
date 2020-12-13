@@ -1857,6 +1857,16 @@ glm::vec3 Rig::deflectHandFromTorso(const glm::vec3& handPosition, const HFMJoin
     return position;
 }
 
+// Get the scale factor to convert distances in the geometry frame into the unscaled rig frame.
+// Typically it will be the unit conversion from cm to m.
+float Rig::GetScaleFactorGeometryToUnscaledRig() const {
+    // Normally the model offset transform will contain the avatar scale factor; we explicitly remove it here.
+    AnimPose modelOffsetWithoutAvatarScale(glm::vec3(1.0f), getModelOffsetPose().rot(), getModelOffsetPose().trans());
+    AnimPose geomToRigWithoutAvatarScale = modelOffsetWithoutAvatarScale * getGeometryOffsetPose();
+
+    return geomToRigWithoutAvatarScale.scale().x;  // in practice this is always a uniform scale factor.
+}
+
 void Rig::updateHands(bool leftHandEnabled, bool rightHandEnabled, bool hipsEnabled, bool hipsEstimated,
                       bool leftArmEnabled, bool rightArmEnabled, bool headEnabled, float dt,
                       const AnimPose& leftHandPose, const AnimPose& rightHandPose,
@@ -2705,10 +2715,10 @@ void Rig::computeAvatarBoundingCapsule(
     Extents totalExtents;
     totalExtents.reset();
 
-    // HACK by convention our Avatars are always modeled such that y=0 is the ground plane.
-    // add the zero point so that our avatars will always have bounding volumes that are flush with the ground
+    // HACK by convention our Avatars are always modeled such that y=0 (_geometryGroundY) is the ground plane.
+    // add the ground point so that our avatars will always have bounding volumes that are flush with the ground
     // even if they do not have legs (default robot)
-    totalExtents.addPoint(glm::vec3(0.0f));
+    totalExtents.addPoint(glm::vec3(0.f, _geometryGroundY, 0.f));
 
     // To reduce the radius of the bounding capsule to be tight with the torso, we only consider joints
     // from the head to the hips when computing the rest of the bounding capsule.
@@ -2755,18 +2765,13 @@ float Rig::getUnscaledEyeHeight() const {
     AnimPose modelOffsetWithoutAvatarScale(glm::vec3(1.0f), getModelOffsetPose().rot(), getModelOffsetPose().trans());
     AnimPose geomToRigWithoutAvatarScale = modelOffsetWithoutAvatarScale * getGeometryOffsetPose();
 
-    // This factor can be used to scale distances in the geometry frame into the unscaled rig frame.
-    // Typically it will be the unit conversion from cm to m.
-    float scaleFactor = geomToRigWithoutAvatarScale.scale().x;  // in practice this always a uniform scale factor.
+    // Factor to scale distances in the geometry frame into the unscaled rig frame.
+    float scaleFactor = GetScaleFactorGeometryToUnscaledRig();
 
     int headTopJoint = indexOfJoint("HeadTop_End");
     int headJoint = indexOfJoint("Head");
     int eyeJoint = indexOfJoint("LeftEye") != -1 ? indexOfJoint("LeftEye") : indexOfJoint("RightEye");
     int toeJoint = indexOfJoint("LeftToeBase") != -1 ? indexOfJoint("LeftToeBase") : indexOfJoint("RightToeBase");
-
-    // Makes assumption that the y = 0 plane in geometry is the ground plane.
-    // We also make that assumption in Rig::computeAvatarBoundingCapsule()
-    const float GROUND_Y = 0.0f;
 
     // Values from the skeleton are in the geometry coordinate frame.
     auto skeleton = getAnimSkeleton();
@@ -2775,8 +2780,8 @@ float Rig::getUnscaledEyeHeight() const {
         float eyeHeight = skeleton->getAbsoluteDefaultPose(eyeJoint).trans().y - skeleton->getAbsoluteDefaultPose(toeJoint).trans().y;
         return scaleFactor * eyeHeight;
     } else if (eyeJoint >= 0) {
-        // Measure Eye joint to y = 0 plane.
-        float eyeHeight = skeleton->getAbsoluteDefaultPose(eyeJoint).trans().y - GROUND_Y;
+        // Measure Eye joint to ground plane.
+        float eyeHeight = skeleton->getAbsoluteDefaultPose(eyeJoint).trans().y - _geometryGroundY;
         return scaleFactor * eyeHeight;
     } else if (headTopJoint >= 0 && toeJoint >= 0) {
         // Measure from ToeBase joint to HeadTop_End joint, then remove forehead distance.
@@ -2786,13 +2791,13 @@ float Rig::getUnscaledEyeHeight() const {
     } else if (headTopJoint >= 0) {
         // Measure from HeadTop_End joint to the ground, then remove forehead distance.
         const float ratio = DEFAULT_AVATAR_EYE_TO_TOP_OF_HEAD / DEFAULT_AVATAR_HEIGHT;
-        float headHeight = skeleton->getAbsoluteDefaultPose(headTopJoint).trans().y - GROUND_Y;
+        float headHeight = skeleton->getAbsoluteDefaultPose(headTopJoint).trans().y - _geometryGroundY;
         return scaleFactor * (headHeight - headHeight * ratio);
     } else if (headJoint >= 0) {
         // Measure Head joint to the ground, then add in distance from neck to eye.
         const float DEFAULT_AVATAR_NECK_TO_EYE = DEFAULT_AVATAR_NECK_TO_TOP_OF_HEAD - DEFAULT_AVATAR_EYE_TO_TOP_OF_HEAD;
         const float ratio = DEFAULT_AVATAR_NECK_TO_EYE / DEFAULT_AVATAR_NECK_HEIGHT;
-        float neckHeight = skeleton->getAbsoluteDefaultPose(headJoint).trans().y - GROUND_Y;
+        float neckHeight = skeleton->getAbsoluteDefaultPose(headJoint).trans().y - _geometryGroundY;
         return scaleFactor * (neckHeight + neckHeight * ratio);
     } else {
         return DEFAULT_AVATAR_EYE_HEIGHT;
@@ -2800,29 +2805,19 @@ float Rig::getUnscaledEyeHeight() const {
 }
 
 // Get the vertical position of the hips joint, in the rig coordinate frame, ignoring the avatar scale.
-// pp todo funcme some of this dup'd stuff from the function above?
 float Rig::getUnscaledHipsHeight() const {
-    // Normally the model offset transform will contain the avatar scale factor, we explicitly remove it here.
-    AnimPose modelOffsetWithoutAvatarScale(glm::vec3(1.0f), getModelOffsetPose().rot(), getModelOffsetPose().trans());
-    AnimPose geomToRigWithoutAvatarScale = modelOffsetWithoutAvatarScale * getGeometryOffsetPose();
-
     // This factor can be used to scale distances in the geometry frame into the unscaled rig frame.
-    // Typically it will be the unit conversion from cm to m.
-    float scaleFactor = geomToRigWithoutAvatarScale.scale().x;  // in practice this always a uniform scale factor.
+    float scaleFactor = GetScaleFactorGeometryToUnscaledRig();
 
     const int hipsJoint = indexOfJoint("Hips");
 
-    // Makes assumption that the y = 0 plane in geometry is the ground plane.
-    // We also make that assumption in Rig::computeAvatarBoundingCapsule()
-    const float GROUND_Y = 0.0f;
-
     // Values from the skeleton are in the geometry coordinate frame.
     if (hipsJoint >= 0) {
-        // Measure hip joint to y = 0 plane.
-        float hipsHeight = getAnimSkeleton()->getAbsoluteDefaultPose(hipsJoint).trans().y - GROUND_Y;
+        // Measure hip joint to ground plane.
+        float hipsHeight = getAnimSkeleton()->getAbsoluteDefaultPose(hipsJoint).trans().y - _geometryGroundY;
         return scaleFactor * hipsHeight;
     } else {
-        return 1.022f;//todo? DEFAULT_AVATAR_HIPS_HEIGHT;
+        return DEFAULT_AVATAR_HIPS_HEIGHT;
     }
 }
 

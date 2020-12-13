@@ -5615,7 +5615,7 @@ bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar,
     shouldSnapOut = false;
 
     // If hips are under direct control (tracked), they give our desired body rotation and we snap to it every frame.
-    if (AreHipsTracked()) {
+    if (myAvatar.areHipsTracked()) {
         shouldSnapOut = true;
         return true;
     }
@@ -5626,7 +5626,7 @@ bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar,
 }
 
 bool MyAvatar::FollowHelper::shouldActivateHorizontal(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix) const {
-    if (!myAvatar.IsAllowedToLean()) {
+    if (!myAvatar.isAllowedToLean()) {
         controller::Pose currentHeadPose = myAvatar.getControllerPoseInAvatarFrame(controller::Action::HEAD);
         if (!withinBaseOfSupport(currentHeadPose)) {
             return true;
@@ -5667,7 +5667,7 @@ bool MyAvatar::FollowHelper::shouldActivateHorizontalCG(MyAvatar& myAvatar) cons
     bool stepDetected = false;
 
     if (!withinBaseOfSupport(currentHeadPose)) {
-        if (!myAvatar.IsAllowedToLean()) {
+        if (!myAvatar.isAllowedToLean()) {
             stepDetected = true;
         } else {
             float myScale = myAvatar.getAvatarScale();
@@ -5753,7 +5753,7 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
         }
     }
 
-    const bool feetAreTracked = myAvatar.AreFeetTracked();
+    const bool feetAreTracked = myAvatar.areFeetTracked();
 
     if ((feetAreTracked || getForceActivateHorizontal()) && !isActive(CharacterController::FollowType::Horizontal)) {
         activate(CharacterController::FollowType::Horizontal, feetAreTracked);
@@ -7001,27 +7001,27 @@ bool MyAvatar::isJumping() {
 }
 
 // Determine if the avatar is allowed to lean in its current situation.
-bool MyAvatar::IsAllowedToLean() const {
+bool MyAvatar::isAllowedToLean() const {
     return (getAllowAvatarLeaningPreference() == MyAvatar::AllowAvatarLeaningPreference::Always) ||
             ((getAllowAvatarLeaningPreference() == MyAvatar::AllowAvatarLeaningPreference::WhenUserIsStanding) &&
             !getIsInSittingState());
 }
 
 // Determine if the feet are under direct control (tracked).
-bool MyAvatar::AreFeetTracked() const {
+bool MyAvatar::areFeetTracked() const {
     // pp todo test: Foot tracking only activates when both feet are tracked, so we only need to test one.
     return getControllerPoseInSensorFrame(controller::Action::LEFT_FOOT).isValid();
 }
 
 // Determine if the hips are under direct control (tracked).
-bool MyAvatar::AreHipsTracked() const {
+bool MyAvatar::areHipsTracked() const {
     return getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
 }
 
 // Determine if crouch recentring is enabled (making the avatar stand when the user is sitting in the real world).
 bool MyAvatar::getHMDCrouchRecenterEnabled() const {
     return (!_characterController.getSeated() &&
-            (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !AreFeetTracked());
+            (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !areFeetTracked());
 }
 
 bool MyAvatar::setPointAt(const glm::vec3& pointAtTarget) {

@@ -187,7 +187,6 @@ protected:
     btVector3 _velocityChange;
     btTransform _followDesiredBodyTransform;
     const float* _followTimeRemainingPerType { nullptr };
-
     btTransform _characterBodyTransform;
     btVector3 _position;
     btQuaternion _rotation;

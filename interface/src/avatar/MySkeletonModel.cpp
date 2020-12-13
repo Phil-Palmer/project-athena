@@ -66,10 +66,12 @@ static AnimPose computeHipsInSensorFrame(MyAvatar* myAvatar, bool isFlying) {
         return result;
     }
 
-    const bool useCenterOfGravityModel = !isFlying && myAvatar->getCenterOfGravityModelEnabled() && 
-                                         !myAvatar->getIsInWalkingState() && !myAvatar->getIsInSittingState() && myAvatar->getHMDLeanRecenterEnabled() &&
-                                         (myAvatar->getAllowAvatarLeaningPreference() != MyAvatar::AllowAvatarLeaningPreference::AlwaysNoRecenter) &&
-                                         myAvatar->getHMDCrouchRecenterEnabled();// pp todo comment?: without this check, we'd see the pop from one hip-placement method to another after crouching for SITTING_TIMEOUT (in mode 'stand when I`m standing').
+    const bool useCenterOfGravityModel =
+        !isFlying && myAvatar->getCenterOfGravityModelEnabled() && !myAvatar->getIsInWalkingState() &&
+        !myAvatar->getIsInSittingState() && myAvatar->getHMDLeanRecenterEnabled() &&
+        (myAvatar->getAllowAvatarLeaningPreference() != MyAvatar::AllowAvatarLeaningPreference::AlwaysNoRecenter) &&
+        myAvatar->getHMDCrouchRecenterEnabled();// without this check, we'd see the pop from one hip-placement method
+            // to another after crouching for SITTING_TIMEOUT in mode AllowAvatarStandingPreference::WhenUserIsStanding.
 
     glm::mat4 hipsMat;
     if (useCenterOfGravityModel) {
@@ -80,7 +82,6 @@ static AnimPose computeHipsInSensorFrame(MyAvatar* myAvatar, bool isFlying) {
         // otherwise use the default of putting the hips under the head
         hipsMat = myAvatar->deriveBodyFromHMDSensor(true);
     }
-
     glm::vec3 hipsPos = extractTranslation(hipsMat);
     glm::quat hipsRot = glmExtractRotation(hipsMat);
 

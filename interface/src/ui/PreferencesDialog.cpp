@@ -432,7 +432,8 @@ void setupPreferences() {
 
         auto preference = new RadioButtonsPreference(VR_MOVEMENT, "Allow my avatar to stand", getter, setter);
         QStringList items;
-        items << "When I'm standing" << "Always";// Must match the order in MyAvatar::AllowAvatarStandingPreference.
+        items << "When I'm standing"
+              << "Always";  // Must match the order in MyAvatar::AllowAvatarStandingPreference.
         assert(items.size() == static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count));
         preference->setHeading("Allow my avatar to stand:");
         preference->setItems(items);
@@ -452,7 +453,7 @@ void setupPreferences() {
         items << "When I'm standing"
               << "Always"
               << "Never"
-              << "Always, no recenter (Experimental)";// Must match the order in MyAvatar::AllowAvatarLeaningPreference.
+              << "Always, no recenter (Experimental)";  // Must match the order in MyAvatar::AllowAvatarLeaningPreference.
         assert(items.size() == static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count));
         preference->setHeading("Allow my avatar to lean:");
         preference->setItems(items);
