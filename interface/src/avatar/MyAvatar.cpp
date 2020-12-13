@@ -5615,7 +5615,7 @@ bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar,
     shouldSnapOut = false;
 
     // If hips are under direct control (tracked), they give our desired body rotation and we snap to it every frame.
-    if (myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid()) {
+    if (AreHipsTracked()) {
         shouldSnapOut = true;
         return true;
     }
@@ -5827,20 +5827,12 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
 }
 
 glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix) {
-
-	static bool pptest_do = true;
-	static bool pptest_do2 = false;
-    if (isActive()) {
+   if (isActive()) {
         float dt = myAvatar.getCharacterController()->getFollowTime();
         decrementTimeRemaining(dt);
 
         // apply follow displacement to the body matrix.
         glm::vec3 worldLinearDisplacement = myAvatar.getCharacterController()->getFollowLinearDisplacement();
-
-		if (pptest_do2)
-		{
-			worldLinearDisplacement.y = 0.f;
-		}
 
         glm::quat worldAngularDisplacement = myAvatar.getCharacterController()->getFollowAngularDisplacement();
 
@@ -5860,13 +5852,6 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
                 deactivate(CharacterController::FollowType::Vertical);
                 setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor()));
             }
-        } else{
-			// Keep the current vertical body position.
-            glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor();
-			if (pptest_do)
-			{
-            newBodyMat[3][1] = derivedBodyMat[3][1];
-			}
         }
 
         return newBodyMat;
