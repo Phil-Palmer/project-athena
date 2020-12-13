@@ -229,9 +229,11 @@ MyAvatar::MyAvatar(QThread* thread) :
     _analogPlusWalkSpeedSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "analogPlusWalkSpeed", _analogPlusWalkSpeed.get()),
     _controlSchemeIndexSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "controlSchemeIndex", _controlSchemeIndex),
     _allowAvatarStandingPreferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "allowAvatarStandingPreference",
-        allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Default)]),
+                                          allowAvatarStandingPreferenceStrings[static_cast<uint>(
+                                              AllowAvatarStandingPreference::Default)]),
     _allowAvatarLeaningPreferenceSetting(QStringList() << AVATAR_SETTINGS_GROUP_NAME << "allowAvatarLeaningPreference",
-        allowAvatarLeaningPreferenceStrings[static_cast<uint>(AllowAvatarLeaningPreference::Default)]) {
+                                         allowAvatarLeaningPreferenceStrings[static_cast<uint>(
+                                             AllowAvatarLeaningPreference::Default)]) {
     _clientTraitsHandler.reset(new ClientTraitsHandler(this));
 
     // give the pointer to our head to inherited _headData variable from AvatarData
@@ -707,10 +709,9 @@ void MyAvatar::update(float deltaTime) {
     }
     float angleSpine2 = glm::dot(upSpine2, glm::vec3(0.0f, 1.0f, 0.0f));
 
-    if (getHMDCrouchRecenterEnabled() &&
-        (angleSpine2 > COSINE_THIRTY_DEGREES) &&// if the spine is within +/-30° of vertical
-        getControllerPoseInAvatarFrame(controller::Action::HEAD).getTranslation().y < (headDefaultPositionAvatarSpace.y - SQUAT_THRESHOLD)
-        ) {
+    if (getHMDCrouchRecenterEnabled() && (angleSpine2 > COSINE_THIRTY_DEGREES) &&  // if the spine is within +/-30° of vertical
+        getControllerPoseInAvatarFrame(controller::Action::HEAD).getTranslation().y <
+            (headDefaultPositionAvatarSpace.y - SQUAT_THRESHOLD)) {
 
         _squatTimer += deltaTime;
         if (_squatTimer > SQUATTY_TIMEOUT) {
@@ -1293,8 +1294,10 @@ void MyAvatar::resizeAvatarEntitySettingHandles(uint32_t maxIndex) {
 
 void MyAvatar::saveData() {
     _dominantHandSetting.set(getDominantHand());
-    _allowAvatarStandingPreferenceSetting.set(allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
-    _allowAvatarLeaningPreferenceSetting.set(allowAvatarLeaningPreferenceStrings[static_cast<uint>(getAllowAvatarLeaningPreference())]);
+    _allowAvatarStandingPreferenceSetting.set(
+        allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
+    _allowAvatarLeaningPreferenceSetting.set(
+        allowAvatarLeaningPreferenceStrings[static_cast<uint>(getAllowAvatarLeaningPreference())]);
     _strafeEnabledSetting.set(getStrafeEnabled());
     _hmdAvatarAlignmentTypeSetting.set(getHmdAvatarAlignmentType());
     _headPitchSetting.set(getHead()->getBasePitch());
@@ -1329,8 +1332,10 @@ void MyAvatar::saveData() {
     _analogWalkSpeedSetting.set(getAnalogWalkSpeed());
     _analogPlusWalkSpeedSetting.set(getAnalogPlusWalkSpeed());
     _controlSchemeIndexSetting.set(getControlSchemeIndex());
-    _allowAvatarStandingPreferenceSetting.set(allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
-    _allowAvatarLeaningPreferenceSetting.set(allowAvatarLeaningPreferenceStrings[static_cast<uint>(getAllowAvatarLeaningPreference())]);
+    _allowAvatarStandingPreferenceSetting.set(
+        allowAvatarStandingPreferenceStrings[static_cast<uint>(getAllowAvatarStandingPreference())]);
+    _allowAvatarLeaningPreferenceSetting.set(
+        allowAvatarLeaningPreferenceStrings[static_cast<uint>(getAllowAvatarLeaningPreference())]);
 
     auto hmdInterface = DependencyManager::get<HMDScriptingInterface>();
     saveAvatarEntityDataToSettings();
@@ -2696,7 +2701,8 @@ void MyAvatar::updateMotors() {
 
     if (_motionBehaviors & AVATAR_MOTION_ACTION_MOTOR_ENABLED) {
         if (_isPushing || _isBraking || !_isBeingPushed) {
-            _characterController.addMotor(_actionMotorVelocity, Quaternions::IDENTITY, horizontalMotorTimescale, verticalMotorTimescale);
+            _characterController.addMotor(_actionMotorVelocity, Quaternions::IDENTITY, horizontalMotorTimescale,
+                                          verticalMotorTimescale);
         } else {
             // _isBeingPushed must be true --> disable action motor by giving it a long timescale,
             // otherwise it's attempt to "stand in in place" could defeat scripted motor/thrusts
@@ -3776,8 +3782,8 @@ glm::vec3 MyAvatar::scaleMotorSpeed(const glm::vec3 forward, const glm::vec3 rig
     }
 }
 
-// PP NOW RETURNS WORLD-SPACE DIRECTION
-glm::vec3 MyAvatar::calculateScaledDirection(){
+// Calculate the world-space motor velocity for the avatar.
+glm::vec3 MyAvatar::calculateScaledDirection() {
     CharacterController::State state = _characterController.getState();
 
     // compute action input
@@ -3791,20 +3797,20 @@ glm::vec3 MyAvatar::calculateScaledDirection(){
     bool vectorsAreInAvatarFrame = true;
     bool removeLocalYComponent = false;
 
-    const bool HMDHandRelativeMovement = qApp->isHMDMode() &&
-                                         (movementReference == LocomotionRelativeMovementMode::MOVEMENT_HAND_RELATIVE ||
-                                         movementReference == LocomotionRelativeMovementMode::MOVEMENT_HAND_RELATIVE_LEVELED);
+    const bool HMDHandRelativeMovement =
+        qApp->isHMDMode() && (movementReference == LocomotionRelativeMovementMode::MOVEMENT_HAND_RELATIVE ||
+                              movementReference == LocomotionRelativeMovementMode::MOVEMENT_HAND_RELATIVE_LEVELED);
 
-    const bool desktopLookatOrSelfieMode = !qApp->isHMDMode() &&
-                                           (cameraMode == CAMERA_MODE_FIRST_PERSON_LOOK_AT ||
-                                           cameraMode == CAMERA_MODE_LOOK_AT || cameraMode == CAMERA_MODE_SELFIE);
+    const bool desktopLookatOrSelfieMode =
+        !qApp->isHMDMode() && (cameraMode == CAMERA_MODE_FIRST_PERSON_LOOK_AT || cameraMode == CAMERA_MODE_LOOK_AT ||
+                               cameraMode == CAMERA_MODE_SELFIE);
 
     const bool hoveringOrCollisionless = _characterController.getState() == CharacterController::State::Hover ||
                                          _characterController.computeCollisionMask() == BULLET_COLLISION_MASK_COLLISIONLESS;
 
     if (HMDHandRelativeMovement) {
-        const controller::Action directionHand = (getDominantHand() == DOMINANT_RIGHT_HAND) ?
-                                                 controller::Action::LEFT_HAND : controller::Action::RIGHT_HAND;
+        const controller::Action directionHand =
+            (getDominantHand() == DOMINANT_RIGHT_HAND) ? controller::Action::LEFT_HAND : controller::Action::RIGHT_HAND;
         const controller::Pose handPoseInAvatarFrame = getControllerPoseInAvatarFrame(directionHand);
 
         if (handPoseInAvatarFrame.isValid()) {
@@ -3816,13 +3822,11 @@ glm::vec3 MyAvatar::calculateScaledDirection(){
 
             removeLocalYComponent = (movementReference == LocomotionRelativeMovementMode::MOVEMENT_HAND_RELATIVE_LEVELED);
         }
-    }
-    else {// MOVEMENT_HMD_RELATIVE or desktop mode
+    } else {  // MOVEMENT_HMD_RELATIVE or desktop mode
         if (qApp->isHMDMode()) {
             forward = -IDENTITY_FORWARD;
             right = -IDENTITY_RIGHT;
-        }
-        else {
+        } else {
             forward = IDENTITY_FORWARD;
             right = IDENTITY_RIGHT;
         }
@@ -3833,8 +3837,7 @@ glm::vec3 MyAvatar::calculateScaledDirection(){
             rotation = getLookAtRotation();
             removeLocalYComponent = false;
             vectorsAreInAvatarFrame = false;
-        }
-        else {
+        } else {
             controller::Pose headPoseLocal = getControllerPoseInAvatarFrame(controller::Action::HEAD);
             if (headPoseLocal.isValid()) {
                 rotation = headPoseLocal.rotation;
@@ -3853,11 +3856,10 @@ glm::vec3 MyAvatar::calculateScaledDirection(){
             vector.y = 0.f;
             // Normalize if the remaining components are large enough to get a reliable direction.
             const float length = glm::length(vector);
-            const float MIN_LENGTH_FOR_NORMALIZE = 0.061f;// sin(3.5 degrees)
+            const float MIN_LENGTH_FOR_NORMALIZE = 0.061f;  // sin(3.5 degrees)
             if (length > MIN_LENGTH_FOR_NORMALIZE) {
                 vector /= length;
-            }
-            else {
+            } else {
                 vector = Vectors::ZERO;
             }
         };
@@ -3867,7 +3869,7 @@ glm::vec3 MyAvatar::calculateScaledDirection(){
     }
 
     // In HMD, we combine the head pitch into the flying direction even when using hand-relative movement.
-    // TODO: Option to ignore head pitch in hand-relative flying (MOVEMENT_HAND_RELATIVE_LEVELED would then act like MOVEMENT_HAND_RELATIVE when flying).
+    // Todo: Option to ignore head pitch in hand-relative flying (MOVEMENT_HAND_RELATIVE_LEVELED would then act like MOVEMENT_HAND_RELATIVE when flying).
     if (HMDHandRelativeMovement && hoveringOrCollisionless) {
         controller::Pose headPoseLocal = getControllerPoseInAvatarFrame(controller::Action::HEAD);
 
@@ -4814,22 +4816,17 @@ glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool forceFollowYPos) const {
 
     const controller::Pose hipsControllerPose = getControllerPoseInSensorFrame(controller::Action::HIPS);
     if (hipsControllerPose.isValid()) {
-        glm::quat hipsOrientation = hipsControllerPose.rotation;
-
-        hipsOrientation *= Quaternions::Y_180;// todo flip in avatar space?
-
-
+        const glm::quat hipsOrientation = hipsControllerPose.rotation * Quaternions::Y_180;
         const glm::quat hipsOrientationYawOnly = cancelOutRollAndPitch(hipsOrientation);
 
-        glm::vec3 hipsPos = hipsControllerPose.getTranslation();
+        const glm::vec3 hipsPos = hipsControllerPose.getTranslation();
         bodyPos.x = hipsPos.x;
         bodyPos.z = hipsPos.z;
 
-		bodyQuat = hipsOrientationYawOnly;
+        bodyQuat = hipsOrientationYawOnly;
+    } else {
+        bodyQuat = headOrientationYawOnly;
     }
-	else {
-		bodyQuat = headOrientationYawOnly;
-	}
 
     if (!forceFollowYPos && !getHMDCrouchRecenterEnabled()) {
         // Set the body's vertical position as if it were standing in its T-pose.
@@ -5236,15 +5233,17 @@ bool MyAvatar::getIsInWalkingState() const {
     return _isInWalkingState;
 }
 
-// Determine if the user is sitting
+// Determine if the user is sitting in the real world.
 bool MyAvatar::getIsInSittingState() const {
     return _isInSittingState.get();
 }
 
+// Get the user preference of when MyAvatar may stand.
 MyAvatar::AllowAvatarStandingPreference MyAvatar::getAllowAvatarStandingPreference() const {
     return _allowAvatarStandingPreference.get();
 }
 
+// Get the user preference of when MyAvatar may lean.
 MyAvatar::AllowAvatarLeaningPreference MyAvatar::getAllowAvatarLeaningPreference() const {
     return _allowAvatarLeaningPreference.get();
 }
@@ -5314,13 +5313,13 @@ void MyAvatar::setIsInSittingState(bool isSitting) {
     setSitStandStateChange(true);
 }
 
-// Set the preference of when the avatar may stand.
+// Set the user preference of when the avatar may stand.
 void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStandingPreference preference) {
     _allowAvatarStandingPreference.set(preference);
     //pprono setHMDCrouchRecenterEnabled(_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always);// pp todo: && !foottrackers
 }
 
-// Set the preference of when the avatar may lean.
+// Set the user preference of when the avatar may lean.
 void MyAvatar::setAllowAvatarLeaningPreference(const MyAvatar::AllowAvatarLeaningPreference preference) {
     _allowAvatarLeaningPreference.set(preference);
 }
@@ -5573,8 +5572,6 @@ void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
     _timeRemaining[(int)type] = 0.0f;
 }
 
-const float MINIMUM_TIME_REMAINING = 0.005f;  //pp todo resolve dup
-
 // snapFollow: true to snap immediately to the desired transform with regard to 'type',
 // eg. activate(FollowType::Rotation, true) snaps the FollowHelper's rotation immediately
 // to the rotation of its _followDesiredBodyTransform.
@@ -5584,6 +5581,7 @@ void MyAvatar::FollowHelper::activate(CharacterController::FollowType type, cons
     // TODO: Perhaps, the follow time should be proportional to the displacement.
     _timeRemaining[(int)type] = snapFollow ? FLT_MAX : FOLLOW_TIME;
 }
+
 bool MyAvatar::FollowHelper::isActive(CharacterController::FollowType type) const {
     assert(type >= 0 && type < CharacterController::FollowType::Count);
     return _timeRemaining[(int)type] > 0.0f;
@@ -5610,26 +5608,26 @@ void MyAvatar::FollowHelper::decrementTimeRemaining(float dt) {
 }
 
 // shouldSnapOut: (out) true if the FollowHelper should snap immediately to its desired rotation.
-bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix, bool& shouldSnapOut) const {
-
+bool MyAvatar::FollowHelper::shouldActivateRotation(const MyAvatar& myAvatar,
+                                                    const glm::mat4& desiredBodyMatrix,
+                                                    const glm::mat4& currentBodyMatrix,
+                                                    bool& shouldSnapOut) const {
     shouldSnapOut = false;
 
     // If hips are under direct control (tracked), they give our desired body rotation and we snap to it every frame.
-    if (myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid())
-    {
+    if (myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid()) {
         shouldSnapOut = true;
         return true;
     }
 
-    static float FOLLOW_ROTATION_THRESHOLD = cosf(myAvatar.getRotationThreshold());
+    const float FOLLOW_ROTATION_THRESHOLD = cosf(myAvatar.getRotationThreshold());
     glm::vec2 bodyFacing = getFacingDir2D(currentBodyMatrix);
     return glm::dot(-myAvatar.getHeadControllerFacingMovingAverage(), bodyFacing) < FOLLOW_ROTATION_THRESHOLD;
 }
 
 bool MyAvatar::FollowHelper::shouldActivateHorizontal(const MyAvatar& myAvatar, const glm::mat4& desiredBodyMatrix, const glm::mat4& currentBodyMatrix) const {
-
     if (!myAvatar.IsAllowedToLean()) {
-    	controller::Pose currentHeadPose = myAvatar.getControllerPoseInAvatarFrame(controller::Action::HEAD);
+        controller::Pose currentHeadPose = myAvatar.getControllerPoseInAvatarFrame(controller::Action::HEAD);
         if (!withinBaseOfSupport(currentHeadPose)) {
             return true;
         }
@@ -5649,9 +5647,9 @@ bool MyAvatar::FollowHelper::shouldActivateHorizontal(const MyAvatar& myAvatar, 
     const float MAX_BACKWARD_LEAN = 0.1f;
 
     bool stepDetected = false;
-    if (forwardLeanAmount > 0 && forwardLeanAmount > MAX_FORWARD_LEAN) {
+    if (forwardLeanAmount > MAX_FORWARD_LEAN) {
         stepDetected = true;
-    } else if (forwardLeanAmount < 0 && forwardLeanAmount < -MAX_BACKWARD_LEAN) {
+    } else if (forwardLeanAmount < -MAX_BACKWARD_LEAN) {
         stepDetected = true;
     } else {
         stepDetected = fabs(lateralLeanAmount) > MAX_LATERAL_LEAN;
@@ -5666,15 +5664,12 @@ bool MyAvatar::FollowHelper::shouldActivateHorizontalCG(MyAvatar& myAvatar) cons
     }
 
     controller::Pose currentHeadPose = myAvatar.getControllerPoseInAvatarFrame(controller::Action::HEAD);
-    const bool outsideBaseOfSupport = !withinBaseOfSupport(currentHeadPose);
     bool stepDetected = false;
 
-    if (outsideBaseOfSupport) {
+    if (!withinBaseOfSupport(currentHeadPose)) {
         if (!myAvatar.IsAllowedToLean()) {
             stepDetected = true;
-        }
-        else
-        {
+        } else {
             float myScale = myAvatar.getAvatarScale();
 
             // get the current readings
@@ -5699,8 +5694,7 @@ bool MyAvatar::FollowHelper::shouldActivateHorizontalCG(MyAvatar& myAvatar) cons
         glm::vec3 defaultHeadPosition = myAvatar.getAbsoluteDefaultJointTranslationInObjectFrame(myAvatar.getJointIndex("Head"));
         glm::vec3 currentHeadPosition = currentHeadPose.getTranslation();
         float anatomicalHeadToHipsDistance = glm::length(defaultHeadPosition - defaultHipsPosition);
-        if (!isActive(CharacterController::FollowType::Horizontal) &&
-            (!isActive(CharacterController::FollowType::Vertical)) &&
+        if (!isActive(CharacterController::FollowType::Horizontal) && (!isActive(CharacterController::FollowType::Vertical)) &&
             (glm::length(currentHeadPosition - defaultHipsPosition) > (anatomicalHeadToHipsDistance + (DEFAULT_AVATAR_SPINE_STRETCH_LIMIT * anatomicalHeadToHipsDistance)))) {
             myAvatar.setResetMode(true);
             stepDetected = true;
@@ -5747,9 +5741,9 @@ bool MyAvatar::FollowHelper::shouldActivateVertical(const MyAvatar& myAvatar,
 }
 
 void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
-                                                  const glm::mat4& desiredBodyMatrix,
-                                                  const glm::mat4& currentBodyMatrix,
-                                                  bool hasDriveInput) {
+                                              const glm::mat4& desiredBodyMatrix,
+                                              const glm::mat4& currentBodyMatrix,
+                                              bool hasDriveInput) {
     {
         bool snapFollow = false;
         if (!isActive(CharacterController::FollowType::Rotation) &&
@@ -5759,14 +5753,12 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
         }
     }
 
-    //const bool hipsTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
-    const bool footTracker = myAvatar.getControllerPoseInSensorFrame(controller::Action::LEFT_FOOT).isValid();
+    const bool feetAreTracked = myAvatar.AreFeetTracked();
 
-    if ((footTracker || getForceActivateHorizontal()) && !isActive(CharacterController::FollowType::Horizontal)) {
-        activate(CharacterController::FollowType::Horizontal, footTracker);
+    if ((feetAreTracked || getForceActivateHorizontal()) && !isActive(CharacterController::FollowType::Horizontal)) {
+        activate(CharacterController::FollowType::Horizontal, feetAreTracked);
         setForceActivateHorizontal(false);
-    }
-    else {
+    } else {
         if (myAvatar.getHMDLeanRecenterEnabled() &&
             (myAvatar.getAllowAvatarLeaningPreference() != MyAvatar::AllowAvatarLeaningPreference::AlwaysNoRecenter) &&
             qApp->getCamera().getMode() != CAMERA_MODE_MIRROR) {
@@ -5809,7 +5801,7 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
 
     glm::quat currentHipsLocal = myAvatar.getAbsoluteJointRotationInObjectFrame(myAvatar.getJointIndex("Hips"));
     const glm::quat hipsinWorldSpace = followWorldPose.rot() * (Quaternions::Y_180 * (currentHipsLocal));
-    const glm::vec3 avatarUpWorld = glm::normalize(followWorldPose.rot() * (Vectors::UP));
+    const glm::vec3 avatarUpWorld = glm::normalize(followWorldPose.rot()*(Vectors::UP));
     glm::quat resultingSwingInWorld;
     glm::quat resultingTwistInWorld;
     swingTwistDecomposition(hipsinWorldSpace, avatarUpWorld, resultingSwingInWorld, resultingTwistInWorld);
@@ -5836,12 +5828,20 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
 
 glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix) {
 
+	static bool pptest_do = true;
+	static bool pptest_do2 = false;
     if (isActive()) {
         float dt = myAvatar.getCharacterController()->getFollowTime();
         decrementTimeRemaining(dt);
 
         // apply follow displacement to the body matrix.
         glm::vec3 worldLinearDisplacement = myAvatar.getCharacterController()->getFollowLinearDisplacement();
+
+		if (pptest_do2)
+		{
+			worldLinearDisplacement.y = 0.f;
+		}
+
         glm::quat worldAngularDisplacement = myAvatar.getCharacterController()->getFollowAngularDisplacement();
 
         glm::mat4 sensorToWorldMatrix = myAvatar.getSensorToWorldMatrix();
@@ -5861,13 +5861,15 @@ glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const gl
                 setTranslation(newBodyMat, extractTranslation(myAvatar.deriveBodyFromHMDSensor()));
             }
         } else{
-                //pp todo comment?
+			// Keep the current vertical body position.
             glm::mat4 derivedBodyMat = myAvatar.deriveBodyFromHMDSensor();
+			if (pptest_do)
+			{
             newBodyMat[3][1] = derivedBodyMat[3][1];
+			}
         }
 
         return newBodyMat;
-
     } else {
         return currentBodyMatrix;
     }
@@ -7020,13 +7022,21 @@ bool MyAvatar::IsAllowedToLean() const {
             !getIsInSittingState());
 }
 
-// Determine if crouch recentring is enabled (making the avatar stand even when the user is sitting in the real world).
-bool MyAvatar::getHMDCrouchRecenterEnabled() const {
-    // pp todo tidy6
-    bool footTrackers = getControllerPoseInSensorFrame(controller::Action::LEFT_FOOT).isValid();
+// Determine if the feet are under direct control (tracked).
+bool MyAvatar::AreFeetTracked() const {
+    // pp todo test: Foot tracking only activates when both feet are tracked, so we only need to test one.
+    return getControllerPoseInSensorFrame(controller::Action::LEFT_FOOT).isValid();
+}
 
+// Determine if the hips are under direct control (tracked).
+bool MyAvatar::AreHipsTracked() const {
+    return getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
+}
+
+// Determine if crouch recentring is enabled (making the avatar stand when the user is sitting in the real world).
+bool MyAvatar::getHMDCrouchRecenterEnabled() const {
     return (!_characterController.getSeated() &&
-            (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !footTrackers);
+            (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !AreFeetTracked());
 }
 
 bool MyAvatar::setPointAt(const glm::vec3& pointAtTarget) {

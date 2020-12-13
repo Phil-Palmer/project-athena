@@ -2025,6 +2025,12 @@ public:
     // Determine if the avatar is allowed to lean in its current situation.
     bool IsAllowedToLean() const;
 
+    // Determine if the feet are under direct control (tracked).
+    bool AreFeetTracked() const;
+
+    // Determine if the hips are under direct control (tracked).
+    bool AreHipsTracked() const;
+
 public slots:
 
    /**jsdoc
