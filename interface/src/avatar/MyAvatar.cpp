@@ -5248,10 +5248,6 @@ MyAvatar::AllowAvatarLeaningPreference MyAvatar::getAllowAvatarLeaningPreference
     return _allowAvatarLeaningPreference.get();
 }
 
-bool MyAvatar::getIsSitStandStateLocked() const {
-    return _lockSitStandState.get();
-}
-
 float MyAvatar::getWalkSpeed() const {
     if (qApp->isHMDMode()) {
         switch (_controlSchemeIndex) {
@@ -5316,25 +5312,11 @@ void MyAvatar::setIsInSittingState(bool isSitting) {
 // Set the user preference of when the avatar may stand.
 void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStandingPreference preference) {
     _allowAvatarStandingPreference.set(preference);
-    //pprono setHMDCrouchRecenterEnabled(_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always);// pp todo: && !foottrackers
 }
 
 // Set the user preference of when the avatar may lean.
 void MyAvatar::setAllowAvatarLeaningPreference(const MyAvatar::AllowAvatarLeaningPreference preference) {
     _allowAvatarLeaningPreference.set(preference);
-}
-
-// pp todo remove
-void MyAvatar::setIsSitStandStateLocked(bool isLocked) {
-    _lockSitStandState.set(isLocked);
-    _sitStandStateTimer = 0.0f;
-    _squatTimer = 0.0f;
-    _averageUserHeightSensorSpace = _userHeight.get();
-    _tippingPoint = _userHeight.get();
-    if (!isLocked) {
-        // always start the auto transition mode in standing state.
-        setIsInSittingState(false);
-    }
 }
 
 void MyAvatar::setWalkSpeed(float value) {
@@ -7009,7 +6991,7 @@ bool MyAvatar::isAllowedToLean() const {
 
 // Determine if the feet are under direct control (tracked).
 bool MyAvatar::areFeetTracked() const {
-    // pp todo test: Foot tracking only activates when both feet are tracked, so we only need to test one.
+    // Foot tracking only activates when both feet are tracked, so we only need to test one.
     return getControllerPoseInSensorFrame(controller::Action::LEFT_FOOT).isValid();
 }
 

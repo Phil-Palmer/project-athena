@@ -285,10 +285,8 @@ class MyAvatar : public Avatar {
      * @property {number} isInSittingState - <code>true</code> if the user wearing the HMD is determined to be sitting;
      *     <code>false</code> if the user wearing the HMD is determined to be standing.  This can affect whether the avatar
      *     is allowed to stand, lean or recenter its footing, depending on user preferences.
-     *     The property value automatically updates as the user sits or stands, unless
-     *     <code>isSitStandStateLocked == true</code>. Setting the property value overrides the current
-     *     sitting / standing state, which is updated when the user next sits or stands unless
-     *     <code>isSitStandStateLocked == true</code>.
+     *     The property value automatically updates as the user sits or stands. Setting the property value overrides the current
+     *     sitting / standing state, which is updated when the user next sits or stands.
      * @property {boolean} isSitStandStateLocked - <code>true</code> to lock the avatar sitting/standing state, i.e., use this 
      *     to disable automatically changing state.
      * @property {boolean} allowTeleporting - <code>true</code> if teleporting is enabled in the Interface settings, 
@@ -2967,7 +2965,6 @@ private:
     ThreadSafeValueCache<float> _userHeight { DEFAULT_AVATAR_HEIGHT };
     float _averageUserHeightSensorSpace { _userHeight.get() };
     bool _sitStandStateChange { false };
-    ThreadSafeValueCache<bool> _lockSitStandState { false };
 
     // max unscaled forward movement speed
     ThreadSafeValueCache<float> _defaultWalkSpeed { DEFAULT_AVATAR_MAX_WALKING_SPEED };

@@ -1938,10 +1938,6 @@ void AvatarData::clearJointsData() {
 }
 
 int AvatarData::getFauxJointIndex(const QString& name) const {
-    static constexpr QChar fauxJointFirstChar('_');
-    if (!name.startsWith(fauxJointFirstChar)) {
-        return -1;
-    };
     if (name == "_SENSOR_TO_WORLD_MATRIX") {
         return SENSOR_TO_WORLD_MATRIX_INDEX;
     }
