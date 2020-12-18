@@ -53,7 +53,16 @@ const btScalar MIN_CHARACTER_MOTOR_TIMESCALE = 0.05f;
 class CharacterController : public btCharacterControllerInterface {
 
 public:
-    CharacterController();
+    enum class FollowType : uint8_t
+    {
+        Rotation,
+        Horizontal,
+        Vertical,
+        Count
+    };
+    typedef std::array<float, static_cast<size_t>(FollowType::Count)> FollowTimePerType;
+
+    CharacterController(const FollowTimePerType& followTimeRemainingPerType);
     virtual ~CharacterController();
     bool needsRemoval() const;
     bool needsAddition() const;
@@ -100,14 +109,7 @@ public:
 
     void setParentVelocity(const glm::vec3& parentVelocity);
 
-    enum class FollowType : uint8_t {
-        Rotation,
-        Horizontal,
-        Vertical,
-        Count
-    };
-
-    void setFollowParameters(const glm::mat4& desiredWorldMatrix, const float* const followTimeRemainingPerType);// pp todo move followTimeRemainingPerType param to init
+    void setFollowParameters(const glm::mat4& desiredWorldMatrix);
     float getFollowTime() const { return _followTime; }
     glm::vec3 getFollowLinearDisplacement() const;
     glm::quat getFollowAngularDisplacement() const;
@@ -186,7 +188,7 @@ protected:
     btVector3 _preSimulationVelocity;
     btVector3 _velocityChange;
     btTransform _followDesiredBodyTransform;
-    const float* _followTimeRemainingPerType { nullptr };
+    const FollowTimePerType& _followTimeRemainingPerType;
     btTransform _characterBodyTransform;
     btVector3 _position;
     btQuaternion _rotation;

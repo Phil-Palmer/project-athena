@@ -2859,7 +2859,7 @@ private:
     struct FollowHelper {
         FollowHelper();
 
-        float _timeRemaining[CharacterController::FollowType::Count];
+        std::array<float, static_cast<size_t>(CharacterController::FollowType::Count)> _timeRemaining;
 
         void deactivate();
         void deactivate(CharacterController::FollowType type);

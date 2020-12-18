@@ -180,7 +180,7 @@ MyAvatar::MyAvatar(QThread* thread) :
     _scriptedMotorFrame(SCRIPTED_MOTOR_CAMERA_FRAME),
     _scriptedMotorMode(SCRIPTED_MOTOR_SIMPLE_MODE),
     _motionBehaviors(AVATAR_MOTION_DEFAULTS),
-    _characterController(std::shared_ptr<MyAvatar>(this)),
+    _characterController(std::shared_ptr<MyAvatar>(this), _follow._timeRemaining),
     _eyeContactTarget(LEFT_EYE),
     _realWorldFieldOfView("realWorldFieldOfView",
                           DEFAULT_REAL_WORLD_FIELD_OF_VIEW_DEGREES),
@@ -5805,7 +5805,7 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
         followWorldPose.trans().y = desiredTranslation.y;
     }
 
-    myAvatar.getCharacterController()->setFollowParameters(followWorldPose, _timeRemaining);
+    myAvatar.getCharacterController()->setFollowParameters(followWorldPose);
 }
 
 glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix) {
