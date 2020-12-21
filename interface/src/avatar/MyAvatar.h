@@ -598,7 +598,7 @@ public:
      * the HMD.
      * @function MyAvatar.centerBody
      */
-    Q_INVOKABLE void centerBody(); // thread-safe
+    Q_INVOKABLE void centerBody(bool pptest_forcefollowypos);  // thread-safe
 
 
     /**jsdoc

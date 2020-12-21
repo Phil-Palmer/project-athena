@@ -505,7 +505,8 @@ void MyAvatar::resetSensorsAndBody() {
     reset(true, false, true);
 }
 
-void MyAvatar::centerBody() {
+// pptest_forcefollowypos : needs to be true for beginsit
+void MyAvatar::centerBody(bool pptest_forcefollowypos) {
     if (QThread::currentThread() != thread()) {
         QMetaObject::invokeMethod(this, "centerBody");
         return;
@@ -513,7 +514,7 @@ void MyAvatar::centerBody() {
 
     // derive the desired body orientation from the current hmd orientation, before the sensor reset.
     auto newBodySensorMatrix =
-        deriveBodyFromHMDSensor(true);  // Based on current cached HMD position/rotation..
+        deriveBodyFromHMDSensor(pptest_forcefollowypos);  // Based on current cached HMD position/rotation..
 
     // transform this body into world space
     auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
@@ -6699,13 +6700,15 @@ void MyAvatar::beginSit(const glm::vec3& position, const glm::quat& rotation) {
 
     static bool pptest_forcevrecentre = false;  //pptt!!! was false  pp todo remove
 
+    static bool pptest_forcefollow_beginsit = true;
+
     if (!_characterController.getSeated()) {
         _characterController.setSeated(true);
         setCollisionsEnabled(false);
         setHMDLeanRecenterEnabled(false);
         // Disable movement
         setSitDriveKeysStatus(false);
-        centerBody();
+        centerBody(pptest_forcefollow_beginsit);
         int hipIndex = getJointIndex("Hips");
         clearPinOnJoint(hipIndex);
         pinJoint(hipIndex, position, rotation);
@@ -6723,12 +6726,14 @@ void MyAvatar::endSit(const glm::vec3& position, const glm::quat& rotation) {
         return;
     }
 
+    static bool pptest_forcefollow_endsit = false;
+
     if (_characterController.getSeated()) {
         clearPinOnJoint(getJointIndex("Hips"));
         _characterController.setSeated(false);
         setCollisionsEnabled(true);
         setHMDLeanRecenterEnabled(true);
-        centerBody();
+        centerBody(pptest_forcefollow_endsit);
         slamPosition(position);
         setWorldOrientation(rotation);
 
