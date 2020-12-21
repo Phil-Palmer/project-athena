@@ -5318,6 +5318,14 @@ void MyAvatar::setIsInSittingState(bool isSitting) {
 // Set the user preference of when the avatar may stand.
 void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStandingPreference preference) {
     _allowAvatarStandingPreference.set(preference);
+
+    static bool pptest_doreset = true;//pptt was false
+    static bool pptest_forcefollow = false;// endsit=false
+
+    if (pptest_doreset)
+    {
+        centerBody(pptest_forcefollow);
+    }
 }
 
 // Set the user preference of when the avatar may lean.
