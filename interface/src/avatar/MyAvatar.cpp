@@ -5326,6 +5326,21 @@ void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStand
     {
         centerBody(pptest_forcefollow);
     }
+
+    static bool pptest_forcevrecentre = true;//pptt was false
+    if (pptest_forcevrecentre) {
+        _follow.setForceActivateVertical(true);
+    }
+
+    static bool pptest_forcehrecentre = true;  //pptt was false
+    if (pptest_forcehrecentre) {
+        _follow.setForceActivateHorizontal(true);
+    }
+
+    static bool pptest_forcerotcentre = true;  //pptt was false
+    if (pptest_forcerotcentre) {
+        _follow.setForceActivateRotation(true);
+    }
 }
 
 // Set the user preference of when the avatar may lean.
