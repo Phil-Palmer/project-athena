@@ -505,7 +505,8 @@ void MyAvatar::resetSensorsAndBody() {
     reset(true, false, true);
 }
 
-// pptest_forcefollowypos : needs to be true for beginsit
+// forceFollowYPos: true to force the body matrix to be affected by the HMD's
+// vertical position, even if crouch recentring is disabled.
 void MyAvatar::centerBody(bool pptest_forcefollowypos) {
     if (QThread::currentThread() != thread()) {
         QMetaObject::invokeMethod(this, "centerBody");
@@ -5250,10 +5251,6 @@ MyAvatar::AllowAvatarLeaningPreference MyAvatar::getAllowAvatarLeaningPreference
     return _allowAvatarLeaningPreference.get();
 }
 
-bool MyAvatar::getIsSitStandStateLocked() const {
-    return _lockSitStandState.get();
-}
-
 float MyAvatar::getWalkSpeed() const {
     if (qApp->isHMDMode()) {
         switch (_controlSchemeIndex) {
@@ -5319,46 +5316,14 @@ void MyAvatar::setIsInSittingState(bool isSitting) {
 void MyAvatar::setAllowAvatarStandingPreference(const MyAvatar::AllowAvatarStandingPreference preference) {
     _allowAvatarStandingPreference.set(preference);
 
-    static bool pptest_doreset = true;//pptt was false
-    static bool pptest_forcefollow = false;// endsit=false
-
-    if (pptest_doreset)
-    {
-        centerBody(pptest_forcefollow);
-    }
-
-    static bool pptest_forcevrecentre = true;//pptt was false
-    if (pptest_forcevrecentre) {
-        _follow.setForceActivateVertical(true);
-    }
-
-    static bool pptest_forcehrecentre = true;  //pptt was false
-    if (pptest_forcehrecentre) {
-        _follow.setForceActivateHorizontal(true);
-    }
-
-    static bool pptest_forcerotcentre = true;  //pptt was false
-    if (pptest_forcerotcentre) {
-        _follow.setForceActivateRotation(true);
-    }
+    // Set the correct vertical position for the avatar body relative to the HMD,
+    // according to the newly-selected avatar standing preference.
+    centerBody(false);
 }
 
 // Set the user preference of when the avatar may lean.
 void MyAvatar::setAllowAvatarLeaningPreference(const MyAvatar::AllowAvatarLeaningPreference preference) {
     _allowAvatarLeaningPreference.set(preference);
-}
-
-// pp todo remove
-void MyAvatar::setIsSitStandStateLocked(bool isLocked) {
-    _lockSitStandState.set(isLocked);
-    _sitStandStateTimer = 0.0f;
-    _squatTimer = 0.0f;
-    _averageUserHeightSensorSpace = _userHeight.get();
-    _tippingPoint = _userHeight.get();
-    if (!isLocked) {
-        // always start the auto transition mode in standing state.
-        setIsInSittingState(false);
-    }
 }
 
 void MyAvatar::setWalkSpeed(float value) {
@@ -6721,25 +6686,16 @@ void MyAvatar::beginSit(const glm::vec3& position, const glm::quat& rotation) {
         return;
     }
 
-    static bool pptest_forcevrecentre = false;  //pptt!!! was false  pp todo remove
-
-    static bool pptest_forcefollow_beginsit = true;
-
     if (!_characterController.getSeated()) {
         _characterController.setSeated(true);
         setCollisionsEnabled(false);
         setHMDLeanRecenterEnabled(false);
         // Disable movement
         setSitDriveKeysStatus(false);
-        centerBody(pptest_forcefollow_beginsit);
+        centerBody(true);
         int hipIndex = getJointIndex("Hips");
         clearPinOnJoint(hipIndex);
         pinJoint(hipIndex, position, rotation);
-
-        if (pptest_forcevrecentre) {
-            _follow.setForceActivateVertical(true);
-            pptest_forcevrecentre = false;
-        }
     }
 }
 
@@ -6749,14 +6705,12 @@ void MyAvatar::endSit(const glm::vec3& position, const glm::quat& rotation) {
         return;
     }
 
-    static bool pptest_forcefollow_endsit = false;
-
     if (_characterController.getSeated()) {
         clearPinOnJoint(getJointIndex("Hips"));
         _characterController.setSeated(false);
         setCollisionsEnabled(true);
         setHMDLeanRecenterEnabled(true);
-        centerBody(pptest_forcefollow_endsit);
+        centerBody(false);
         slamPosition(position);
         setWorldOrientation(rotation);
 
