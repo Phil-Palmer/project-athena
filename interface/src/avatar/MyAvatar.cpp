@@ -506,8 +506,8 @@ void MyAvatar::resetSensorsAndBody() {
 }
 
 // forceFollowYPos: true to force the body matrix to be affected by the HMD's
-// vertical position, even if crouch recentring is disabled.
-void MyAvatar::centerBody(bool pptest_forcefollowypos) {
+// vertical position, even if crouch recentering is disabled.
+void MyAvatar::centerBody(const bool forceFollowYPos) {
     if (QThread::currentThread() != thread()) {
         QMetaObject::invokeMethod(this, "centerBody");
         return;
@@ -515,7 +515,7 @@ void MyAvatar::centerBody(bool pptest_forcefollowypos) {
 
     // derive the desired body orientation from the current hmd orientation, before the sensor reset.
     auto newBodySensorMatrix =
-        deriveBodyFromHMDSensor(pptest_forcefollowypos);  // Based on current cached HMD position/rotation..
+        deriveBodyFromHMDSensor(forceFollowYPos);  // Based on current cached HMD position/rotation..
 
     // transform this body into world space
     auto worldBodyMatrix = _sensorToWorldMatrix * newBodySensorMatrix;
