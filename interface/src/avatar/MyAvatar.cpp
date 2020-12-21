@@ -7065,11 +7065,3 @@ void MyAvatar::resetPointAt() {
                                                         POINT_BLEND_LINEAR_ALPHA_NAME, POINT_ALPHA_BLENDING);
     }
 }
-
-
-
-// ppmov pp todo undo
-Q_INVOKABLE void MyAvatar::setHMDLeanRecenterEnabled(bool value)
-{
-    _hmdLeanRecenterEnabled = value;
-}

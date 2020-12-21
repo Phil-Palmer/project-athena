@@ -595,7 +595,7 @@ public:
      * the HMD.
      * @function MyAvatar.centerBody
      */
-    Q_INVOKABLE void centerBody(bool pptest_forcefollowypos);  // thread-safe
+    Q_INVOKABLE void centerBody(const bool forceFollowYPos); // thread-safe
 
 
     /**jsdoc
@@ -987,7 +987,7 @@ public:
      * @param {boolean} enabled - <code>true</code> to recenter the avatar under the head as it moves, <code>false</code> to 
      *     disable recentering.
      */
-    Q_INVOKABLE void setHMDLeanRecenterEnabled(bool value);//ppmov pp todo undo  { _hmdLeanRecenterEnabled = value; }
+    Q_INVOKABLE void setHMDLeanRecenterEnabled(bool value) { _hmdLeanRecenterEnabled = value; }
 
     /**jsdoc
      * Gets whether the avatar's position updates to recenter the avatar under the head. In room-scale VR, recentering
