@@ -410,6 +410,7 @@ class MyAvatar : public Avatar {
     Q_PROPERTY(float walkBackwardSpeed READ getWalkBackwardSpeed WRITE setWalkBackwardSpeed NOTIFY walkBackwardSpeedChanged);
     Q_PROPERTY(float sprintSpeed READ getSprintSpeed WRITE setSprintSpeed NOTIFY sprintSpeedChanged);
     Q_PROPERTY(bool isInSittingState READ getIsInSittingState WRITE setIsInSittingState);
+    Q_PROPERTY(bool isSitStandStateLocked READ getIsSitStandStateLocked WRITE setIsSitStandStateLocked);
     Q_PROPERTY(bool allowTeleporting READ getAllowTeleporting)
 
     const QString DOMINANT_LEFT_HAND = "left";
@@ -989,7 +990,7 @@ public:
      * @param {boolean} enabled - <code>true</code> to recenter the avatar under the head as it moves, <code>false</code> to 
      *     disable recentering.
      */
-    Q_INVOKABLE void setHMDLeanRecenterEnabled(bool value) { _hmdLeanRecenterEnabled = value; }
+    Q_INVOKABLE void setHMDLeanRecenterEnabled(bool value);//ppmov pp todo undo  { _hmdLeanRecenterEnabled = value; }
 
     /**jsdoc
      * Gets whether the avatar's position updates to recenter the avatar under the head. In room-scale VR, recentering
@@ -1777,6 +1778,7 @@ public:
     AllowAvatarStandingPreference getAllowAvatarStandingPreference() const;
     void setAllowAvatarLeaningPreference(const AllowAvatarLeaningPreference preference);
     AllowAvatarLeaningPreference getAllowAvatarLeaningPreference() const;
+    void setIsSitStandStateLocked(bool isLocked);
     bool getIsSitStandStateLocked() const;
     void setWalkSpeed(float value);
     float getWalkSpeed() const;
@@ -2963,6 +2965,7 @@ private:
     ThreadSafeValueCache<float> _userHeight { DEFAULT_AVATAR_HEIGHT };
     float _averageUserHeightSensorSpace { _userHeight.get() };
     bool _sitStandStateChange { false };
+    ThreadSafeValueCache<bool> _lockSitStandState { false };
 
     // max unscaled forward movement speed
     ThreadSafeValueCache<float> _defaultWalkSpeed { DEFAULT_AVATAR_MAX_WALKING_SPEED };
