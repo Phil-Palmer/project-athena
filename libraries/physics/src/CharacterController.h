@@ -99,7 +99,15 @@ public:
     void getPositionAndOrientation(glm::vec3& position, glm::quat& rotation) const;
 
     void setParentVelocity(const glm::vec3& parentVelocity);
-    void setFollowParameters(const glm::mat4& desiredWorldMatrix, float timeRemaining);
+
+    enum class FollowType : uint8_t {
+        Rotation,
+        Horizontal,
+        Vertical,
+        Count
+    };
+
+    void setFollowParameters(const glm::mat4& desiredWorldMatrix, const float* const followTimeRemainingPerType);// pp todo move followTimeRemainingPerType param to init
     float getFollowTime() const { return _followTime; }
     glm::vec3 getFollowLinearDisplacement() const;
     glm::quat getFollowAngularDisplacement() const;
@@ -178,7 +186,8 @@ protected:
     btVector3 _preSimulationVelocity;
     btVector3 _velocityChange;
     btTransform _followDesiredBodyTransform;
-    btScalar _followTimeRemaining;
+    const float* _followTimeRemainingPerType { nullptr };
+
     btTransform _characterBodyTransform;
     btVector3 _position;
     btQuaternion _rotation;
