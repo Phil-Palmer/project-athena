@@ -1789,7 +1789,7 @@ public:
     void setAnalogPlusSprintSpeed(float value);
     float getAnalogPlusSprintSpeed() const;
     void setSitStandStateChange(bool stateChanged);
-    bool getSitStandStateChange() const;
+    float getSitStandStateChange() const;
     void updateSitStandState(float newHeightReading, float dt);
 
     QVector<QString> getScriptUrls();

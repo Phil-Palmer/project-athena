@@ -16,7 +16,6 @@
 #include "InterfaceLogging.h"
 #include "AnimUtil.h"
 
-#pragma optimize("", off)// PP
 
 
 MySkeletonModel::MySkeletonModel(Avatar* owningAvatar, QObject* parent) : SkeletonModel(owningAvatar, parent) {

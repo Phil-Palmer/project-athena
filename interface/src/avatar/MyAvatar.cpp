@@ -10,8 +10,6 @@
 //  See the accompanying file LICENSE or http://www.apache.org/licenses/LICENSE-2.0.html
 //
 
-#pragma optimize("", off)  // PP
-
 #include "MyAvatar.h"
 
 #include <algorithm>
@@ -5452,7 +5450,7 @@ void MyAvatar::setSitStandStateChange(bool stateChanged) {
 }
 
 // Determine if the user's real-world sit/stand state has changed.
-bool MyAvatar::getSitStandStateChange() const {
+float MyAvatar::getSitStandStateChange() const {
     return _sitStandStateChange;
 }
 
@@ -5632,7 +5630,7 @@ bool MyAvatar::FollowHelper::shouldActivateHorizontal(const MyAvatar& myAvatar, 
     bool stepDetected = false;
     if (forwardLeanAmount > MAX_FORWARD_LEAN) {
         stepDetected = true;
-    } else if (forwardLeanAmount < -MAX_BACKWARD_LEAN) {
+    } else if (forwardLeanAmount < 0 && forwardLeanAmount < -MAX_BACKWARD_LEAN) {
         stepDetected = true;
     } else {
         stepDetected = fabs(lateralLeanAmount) > MAX_LATERAL_LEAN;
