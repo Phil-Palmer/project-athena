@@ -67,11 +67,10 @@ static AnimPose computeHipsInSensorFrame(MyAvatar* myAvatar, bool isFlying) {
     }
 
     const bool useCenterOfGravityModel =
-        !isFlying && myAvatar->getCenterOfGravityModelEnabled() && !myAvatar->getIsInWalkingState() &&
+        myAvatar->getCenterOfGravityModelEnabled() && !isFlying && !myAvatar->getIsInWalkingState() &&
         !myAvatar->getIsInSittingState() && myAvatar->getHMDLeanRecenterEnabled() &&
         (myAvatar->getAllowAvatarLeaningPreference() != MyAvatar::AllowAvatarLeaningPreference::AlwaysNoRecenter) &&
-        myAvatar->getHMDCrouchRecenterEnabled();// without this check, we'd see the pop from one hip-placement method
-            // to another after crouching for SITTING_TIMEOUT in mode AllowAvatarStandingPreference::WhenUserIsStanding.
+        myAvatar->getHMDCrouchRecenterEnabled();
 
     glm::mat4 hipsMat;
     if (useCenterOfGravityModel) {

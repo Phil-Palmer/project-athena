@@ -564,9 +564,8 @@ public:
     };
     Q_ENUM(AllowAvatarLeaningPreference)
 
-    static const QString
-        MyAvatar::allowAvatarStandingPreferenceStrings[static_cast<uint>(AllowAvatarStandingPreference::Count)];
-    static const QString MyAvatar::allowAvatarLeaningPreferenceStrings[static_cast<uint>(AllowAvatarLeaningPreference::Count)];
+    static const std::array<QString, (uint)AllowAvatarStandingPreference::Count> allowAvatarStandingPreferenceStrings;
+    static const std::array<QString, (uint)AllowAvatarLeaningPreference::Count> allowAvatarLeaningPreferenceStrings;
 
     explicit MyAvatar(QThread* thread);
     virtual ~MyAvatar();
@@ -2856,7 +2855,7 @@ private:
     struct FollowHelper {
         FollowHelper();
 
-        std::array<float, static_cast<size_t>(CharacterController::FollowType::Count)> _timeRemaining;
+        CharacterController::FollowTimePerType _timeRemaining;
 
         void deactivate();
         void deactivate(CharacterController::FollowType type);
@@ -2928,7 +2927,7 @@ private:
     bool _hmdLeanRecenterEnabled { true };
     bool _hmdCrouchRecenterEnabled{
         true
-    };  // Is MyAvatar allowed to recentre vertically (stand) when the user is sitting in the real world.
+    };  // Is MyAvatar allowed to recenter vertically (stand) when the user is sitting in the real world.
     bool _sprint { false };
 
     AnimPose _prePhysicsRoomPose;

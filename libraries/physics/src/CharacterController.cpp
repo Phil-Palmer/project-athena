@@ -353,6 +353,8 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
     computeNewVelocity(dt, velocity);
 
     const float MINIMUM_TIME_REMAINING = 0.005f;
+    static_assert(FOLLOW_TIME_IMMEDIATE_SNAP > MINIMUM_TIME_REMAINING, "The code below assumes this condition is true.");
+
     bool hasFollowTimeRemaining = false;
     for (float followTime : _followTimeRemainingPerType) {
         if (followTime > MINIMUM_TIME_REMAINING) {
@@ -375,7 +377,7 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
             const float horizontalTime = _followTimeRemainingPerType[static_cast<uint>(FollowType::Horizontal)];
             const float verticalTime = _followTimeRemainingPerType[static_cast<uint>(FollowType::Vertical)];
 
-            if (horizontalTime == FLT_MAX) {
+            if (horizontalTime == FOLLOW_TIME_IMMEDIATE_SNAP) {
                 linearDisplacement.setX(deltaPos.x());
                 linearDisplacement.setZ(deltaPos.z());
             } else if (horizontalTime > MINIMUM_TIME_REMAINING) {
@@ -383,7 +385,7 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
                 linearDisplacement.setZ((deltaPos.z() * dt) / horizontalTime);
             }
 
-            if (verticalTime == FLT_MAX) {
+            if (verticalTime == FOLLOW_TIME_IMMEDIATE_SNAP) {
                 linearDisplacement.setY(deltaPos.y());
             } else if (verticalTime > MINIMUM_TIME_REMAINING) {
                 linearDisplacement.setY((deltaPos.y() * dt) / verticalTime);
@@ -431,7 +433,7 @@ void CharacterController::playerStep(btCollisionWorld* collisionWorld, btScalar 
                 // compute the angle we will resolve for this dt, but don't overshoot
                 float angle = 2.0f * acosf(qDot);
 
-                if (rotationTime != FLT_MAX) {
+                if (rotationTime != FOLLOW_TIME_IMMEDIATE_SNAP) {
                     if (dt < rotationTime) {
                         angle *= dt / rotationTime;
                     }

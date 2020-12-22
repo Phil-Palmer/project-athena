@@ -60,7 +60,12 @@ public:
         Vertical,
         Count
     };
+
+    // Remaining follow time for each FollowType
     typedef std::array<float, static_cast<size_t>(FollowType::Count)> FollowTimePerType;
+
+    // Follow time value meaning that we should snap immediately to the target.
+    static constexpr float FOLLOW_TIME_IMMEDIATE_SNAP = FLT_MAX;
 
     CharacterController(const FollowTimePerType& followTimeRemainingPerType);
     virtual ~CharacterController();

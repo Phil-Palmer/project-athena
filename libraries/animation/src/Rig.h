@@ -292,7 +292,7 @@ protected:
     float GetScaleFactorGeometryToUnscaledRig() const;
 
     // The ground plane Y position in geometry space.
-    static constexpr float _geometryGroundY = 0.f;
+    static constexpr float GEOMETRY_GROUND_Y = 0.0f;
 
     AnimPose _modelOffset;  // model to rig space
     AnimPose _geometryOffset; // geometry to model space (includes unit offset & fst offsets)

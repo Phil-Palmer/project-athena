@@ -2715,10 +2715,10 @@ void Rig::computeAvatarBoundingCapsule(
     Extents totalExtents;
     totalExtents.reset();
 
-    // HACK by convention our Avatars are always modeled such that y=0 (_geometryGroundY) is the ground plane.
+    // HACK by convention our Avatars are always modeled such that y=0 (GEOMETRY_GROUND_Y) is the ground plane.
     // add the ground point so that our avatars will always have bounding volumes that are flush with the ground
     // even if they do not have legs (default robot)
-    totalExtents.addPoint(glm::vec3(0.f, _geometryGroundY, 0.f));
+    totalExtents.addPoint(glm::vec3(0.f, GEOMETRY_GROUND_Y, 0.f));
 
     // To reduce the radius of the bounding capsule to be tight with the torso, we only consider joints
     // from the head to the hips when computing the rest of the bounding capsule.
@@ -2781,7 +2781,7 @@ float Rig::getUnscaledEyeHeight() const {
         return scaleFactor * eyeHeight;
     } else if (eyeJoint >= 0) {
         // Measure Eye joint to ground plane.
-        float eyeHeight = skeleton->getAbsoluteDefaultPose(eyeJoint).trans().y - _geometryGroundY;
+        float eyeHeight = skeleton->getAbsoluteDefaultPose(eyeJoint).trans().y - GEOMETRY_GROUND_Y;
         return scaleFactor * eyeHeight;
     } else if (headTopJoint >= 0 && toeJoint >= 0) {
         // Measure from ToeBase joint to HeadTop_End joint, then remove forehead distance.
@@ -2791,13 +2791,13 @@ float Rig::getUnscaledEyeHeight() const {
     } else if (headTopJoint >= 0) {
         // Measure from HeadTop_End joint to the ground, then remove forehead distance.
         const float ratio = DEFAULT_AVATAR_EYE_TO_TOP_OF_HEAD / DEFAULT_AVATAR_HEIGHT;
-        float headHeight = skeleton->getAbsoluteDefaultPose(headTopJoint).trans().y - _geometryGroundY;
+        float headHeight = skeleton->getAbsoluteDefaultPose(headTopJoint).trans().y - GEOMETRY_GROUND_Y;
         return scaleFactor * (headHeight - headHeight * ratio);
     } else if (headJoint >= 0) {
         // Measure Head joint to the ground, then add in distance from neck to eye.
         const float DEFAULT_AVATAR_NECK_TO_EYE = DEFAULT_AVATAR_NECK_TO_TOP_OF_HEAD - DEFAULT_AVATAR_EYE_TO_TOP_OF_HEAD;
         const float ratio = DEFAULT_AVATAR_NECK_TO_EYE / DEFAULT_AVATAR_NECK_HEIGHT;
-        float neckHeight = skeleton->getAbsoluteDefaultPose(headJoint).trans().y - _geometryGroundY;
+        float neckHeight = skeleton->getAbsoluteDefaultPose(headJoint).trans().y - GEOMETRY_GROUND_Y;
         return scaleFactor * (neckHeight + neckHeight * ratio);
     } else {
         return DEFAULT_AVATAR_EYE_HEIGHT;
@@ -2807,14 +2807,14 @@ float Rig::getUnscaledEyeHeight() const {
 // Get the vertical position of the hips joint, in the rig coordinate frame, ignoring the avatar scale.
 float Rig::getUnscaledHipsHeight() const {
     // This factor can be used to scale distances in the geometry frame into the unscaled rig frame.
-    float scaleFactor = GetScaleFactorGeometryToUnscaledRig();
+    const float scaleFactor = GetScaleFactorGeometryToUnscaledRig();
 
     const int hipsJoint = indexOfJoint("Hips");
 
     // Values from the skeleton are in the geometry coordinate frame.
     if (hipsJoint >= 0) {
         // Measure hip joint to ground plane.
-        float hipsHeight = getAnimSkeleton()->getAbsoluteDefaultPose(hipsJoint).trans().y - _geometryGroundY;
+        float hipsHeight = getAnimSkeleton()->getAbsoluteDefaultPose(hipsJoint).trans().y - GEOMETRY_GROUND_Y;
         return scaleFactor * hipsHeight;
     } else {
         return DEFAULT_AVATAR_HIPS_HEIGHT;

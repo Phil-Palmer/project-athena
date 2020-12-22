@@ -111,25 +111,19 @@ const QString POINT_BLEND_LINEAR_ALPHA_NAME = "pointBlendAlpha";
 const QString POINT_REF_JOINT_NAME = "RightShoulder";
 const float POINT_ALPHA_BLENDING = 1.0f;
 
-const QString MyAvatar::allowAvatarStandingPreferenceStrings[] = {
+const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count)>
+    MyAvatar::allowAvatarStandingPreferenceStrings = {
     QStringLiteral("WhenUserIsStanding"),
-    QStringLiteral("Always"),
+    QStringLiteral("Always")
 };
-static_assert(sizeof(MyAvatar::allowAvatarStandingPreferenceStrings) ==
-                  sizeof(*MyAvatar::allowAvatarStandingPreferenceStrings) *
-                      static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count),
-              "Wrong number of initialisers for array");
 
-const QString MyAvatar::allowAvatarLeaningPreferenceStrings[] = {
+const std::array<QString, static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count)>
+    MyAvatar::allowAvatarLeaningPreferenceStrings = {
     QStringLiteral("WhenUserIsStanding"),
     QStringLiteral("Always"),
     QStringLiteral("Never"),
-    QStringLiteral("AlwaysNoRecenter"),
+    QStringLiteral("AlwaysNoRecenter")
 };
-static_assert(sizeof(MyAvatar::allowAvatarLeaningPreferenceStrings) ==
-                  sizeof(*MyAvatar::allowAvatarLeaningPreferenceStrings) *
-                      static_cast<uint>(MyAvatar::AllowAvatarLeaningPreference::Count),
-              "Wrong number of initialisers for array");
 
 MyAvatar::AllowAvatarStandingPreference stringToAllowAvatarStandingPreference(const QString& str) {
     for (uint stringIndex = 0; stringIndex < static_cast<uint>(MyAvatar::AllowAvatarStandingPreference::Count); stringIndex++) {
@@ -4778,7 +4772,7 @@ void MyAvatar::triggerRotationRecenter() {
 
 // old school meat hook style
 // forceFollowYPos (default false): true to force the body matrix to be affected by the HMD's
-// vertical position, even if crouch recentring is disabled.
+// vertical position, even if crouch recentering is disabled.
 glm::mat4 MyAvatar::deriveBodyFromHMDSensor(const bool forceFollowYPos) const {
     glm::vec3 headPosition(0.0f, _userHeight.get(), 0.0f);
     glm::quat headOrientation;
@@ -5557,7 +5551,7 @@ void MyAvatar::FollowHelper::deactivate() {
 }
 
 void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
-    assert(type >= 0 && type < CharacterController::FollowType::Count);
+    assert(static_cast<int>(type) >= 0 && type < CharacterController::FollowType::Count);
     _timeRemaining[(int)type] = 0.0f;
 }
 
@@ -5565,14 +5559,14 @@ void MyAvatar::FollowHelper::deactivate(CharacterController::FollowType type) {
 // eg. activate(FollowType::Rotation, true) snaps the FollowHelper's rotation immediately
 // to the rotation of its _followDesiredBodyTransform.
 void MyAvatar::FollowHelper::activate(CharacterController::FollowType type, const bool snapFollow) {
-    assert(type >= 0 && type < CharacterController::FollowType::Count);
+    assert(static_cast<int>(type) >= 0 && type < CharacterController::FollowType::Count);
 
     // TODO: Perhaps, the follow time should be proportional to the displacement.
-    _timeRemaining[(int)type] = snapFollow ? FLT_MAX : FOLLOW_TIME;
+    _timeRemaining[(int)type] = snapFollow ? CharacterController::FOLLOW_TIME_IMMEDIATE_SNAP : FOLLOW_TIME;
 }
 
 bool MyAvatar::FollowHelper::isActive(CharacterController::FollowType type) const {
-    assert(type >= 0 && type < CharacterController::FollowType::Count);
+    assert(static_cast<int>(type) >= 0 && type < CharacterController::FollowType::Count);
     return _timeRemaining[(int)type] > 0.0f;
 }
 
@@ -5587,7 +5581,7 @@ bool MyAvatar::FollowHelper::isActive() const {
 
 void MyAvatar::FollowHelper::decrementTimeRemaining(float dt) {
     for (uint i = 0, e = static_cast<uint>(CharacterController::FollowType::Count); i < e; ++i) {
-        if (_timeRemaining[i] == FLT_MAX) {
+        if (_timeRemaining[i] == CharacterController::FOLLOW_TIME_IMMEDIATE_SNAP) {
             _timeRemaining[i] = 0.f;
         }
         else {
@@ -5790,21 +5784,19 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
             }
         }
     } else {
-        // Forced activations are requested only by MyAvatar::triggerVerticalRecenter, which is only called from scripts.
-
-        static bool pptest_snap = true;
+        // Forced activations can be requested by MyAvatar::triggerVerticalRecenter, callable from scripts.
 
         if (!isActive(CharacterController::FollowType::Rotation) && getForceActivateRotation()) {
-            activate(CharacterController::FollowType::Rotation, pptest_snap);
+            activate(CharacterController::FollowType::Rotation, true);
             myAvatar.setHeadControllerFacingMovingAverage(myAvatar.getHeadControllerFacing());
             setForceActivateRotation(false);
         }
         if (!isActive(CharacterController::FollowType::Horizontal) && getForceActivateHorizontal()) {
-            activate(CharacterController::FollowType::Horizontal, pptest_snap);
+            activate(CharacterController::FollowType::Horizontal, true);
             setForceActivateHorizontal(false);
         }
         if (!isActive(CharacterController::FollowType::Vertical) && getForceActivateVertical()) {
-            activate(CharacterController::FollowType::Vertical, pptest_snap);
+            activate(CharacterController::FollowType::Vertical, true);
             setForceActivateVertical(false);
         }
     }
@@ -5842,21 +5834,19 @@ void MyAvatar::FollowHelper::prePhysicsUpdate(MyAvatar& myAvatar,
 }
 
 glm::mat4 MyAvatar::FollowHelper::postPhysicsUpdate(MyAvatar& myAvatar, const glm::mat4& currentBodyMatrix) {
-   if (isActive()) {
+    if (isActive()) {
         float dt = myAvatar.getCharacterController()->getFollowTime();
         decrementTimeRemaining(dt);
 
         // apply follow displacement to the body matrix.
         glm::vec3 worldLinearDisplacement = myAvatar.getCharacterController()->getFollowLinearDisplacement();
-
         glm::quat worldAngularDisplacement = myAvatar.getCharacterController()->getFollowAngularDisplacement();
 
         glm::mat4 sensorToWorldMatrix = myAvatar.getSensorToWorldMatrix();
         glm::mat4 worldToSensorMatrix = glm::inverse(sensorToWorldMatrix);
 
         glm::vec3 sensorLinearDisplacement = transformVectorFast(worldToSensorMatrix, worldLinearDisplacement);
-        glm::quat sensorAngularDisplacement =
-            glmExtractRotation(worldToSensorMatrix) * worldAngularDisplacement * glmExtractRotation(sensorToWorldMatrix);
+        glm::quat sensorAngularDisplacement = glmExtractRotation(worldToSensorMatrix) * worldAngularDisplacement * glmExtractRotation(sensorToWorldMatrix);
 
         glm::mat4 newBodyMat = createMatFromQuatAndPos(sensorAngularDisplacement * glmExtractRotation(currentBodyMatrix),
                                                        sensorLinearDisplacement + extractTranslation(currentBodyMatrix));
@@ -7033,7 +7023,7 @@ bool MyAvatar::areHipsTracked() const {
     return getControllerPoseInSensorFrame(controller::Action::HIPS).isValid();
 }
 
-// Determine if crouch recentring is enabled (making the avatar stand when the user is sitting in the real world).
+// Determine if crouch recentering is enabled (making the avatar stand when the user is sitting in the real world).
 bool MyAvatar::getHMDCrouchRecenterEnabled() const {
     return (!_characterController.getSeated() &&
             (_allowAvatarStandingPreference.get() == AllowAvatarStandingPreference::Always) && !areFeetTracked());
